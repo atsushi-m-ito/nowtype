@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Now Type: a markdown editor</title>
+    <!--<link rel="icon" href="./favicon.ico">-->
+    
+    <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css">-->
+    <link rel="stylesheet" href="./katex/katex.min.css">
+    <!-- The loading of KaTeX is deferred to speed up page rendering -->
+    <!--<script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>-->
+    <script src="./katex/katex.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="./style/nt.ele.css" media="all" id="nt_ele_css">
+    <link rel="stylesheet" type="text/css" href="./style/notoserif.css" media="all" id="main_css">
+    <link rel="stylesheet" type="text/css" href="./style/nt.print.css" media="all" id="nt_print_css">
+    
+</head>
+<body>
+<div id="backbox"><div id="paper"><div id="render_div" spellcheck="false"></div></div></div>
+
+<div id="savebar" class="savebar"><br/></div>
+<div id="pdfbar" class="pdfbar">Creating PDF</div>
+<div id="modal1" class="modal1" >
+    <div id="modalclose" class="close" >CLOSE</div>
+    <div class="modaltext" ></div>
+</div>    
+</body>
+
+    <script>
+        "use strict";
+
+
+        
+        
+
+        let css_mode = 0;
+        function TestChageCSS(){
+            let main_css = document.getElementById("main_css");
+            
+            if (css_mode === 0){
+                main_css.href = "./style/udgothic.css";
+            }else{
+                main_css.href = "./style/notoserif.css";
+            }
+            css_mode = 1 - css_mode;
+            console.log("css-file: ",main_css.href);
+        }
+
+
+        //file read 
+        function TestFileOpen(file){
+            if (!(window.File && window.FileReader)) {
+                alert("FileAPI is not supported!!");
+                return false;
+            }
+
+            console.log("reading file: ", file.name);
+            
+            const reader = new FileReader();
+            reader.onload = function(){ 
+                
+                NT_SetFilePath(ele_nt_filepath);
+                NT_SetMarkdown(reader.result);
+            }
+
+            ele_nt_filepath = file.path;
+            console.log(ele_nt_filepath);
+            reader.readAsText(file);
+        }
+
+
+
+        function CloseModal(event){
+            const modal = event.target.parentNode;
+            modal.style.display='none';
+        }
+        
+        function ShowHTML(a, b) {
+            const main = document.getElementById(a);
+            const modal = document.getElementById(b);
+            const modal_text = modal.getElementsByClassName("modaltext");
+            modal_text[0].textContent = main.outerHTML;
+            modal.style.display = "block";
+        }
+
+        function ShowMarkdown(b) {
+            const modal = document.getElementById(b);
+            const modal_text = modal.getElementsByClassName("modaltext");
+            modal_text[0].textContent = NT_GetMarkdown();
+            modal.style.display = "block";
+        }
+
+        
+
+
+    </script>
+
+
+    <script src="./src/nt.dom_finder.js"></script>
+    <script src="./src/nt.dom_operation.js"></script>
+    <script src="./src/nt.math_switch.js"></script>
+    <script src="./src/nt.key.shortcut.js"></script>
+    <script src="./src/nt.key_binding.js"></script>
+    <script src="./src/nt.composition.js"></script>
+    <script src="./src/nt.composition.edge.js"></script>
+    <script src="./src/nt.composition.chrome.js"></script>
+    <script src="./src/nt.composition.firefox.js"></script>
+    <script src="./src/nt.composition.mutation.js"></script>
+    <script src="./src/nt.debug.js"></script>
+    <script src="./src/nt.copy_paste.js"></script>
+    <script src="./src/nt.katex_auto_num.js"></script>
+    <script src="./src/nt.init_math.js"></script>
+    <script src="./src/nt.str_replace.js"></script>
+    <script src="./src/nt.md2dom.js"></script>
+    <script src="./src/nt.dom2md.js"></script>
+    <script src="./src/nt.init.js"></script>
+    <script src="./src/nt.load_save.js"></script>
+    <script src="./src/nt.dispatch.js"></script>
+
+    <script>
+        
+        
+        let agent = window.navigator.userAgent.toLowerCase();
+        console.log(agent);
+
+        const ime_type = ((agent.indexOf("mac os") >= 0) ? IME_TYPE.MAC_ELECTRON : 
+                          (agent.indexOf("linux") >= 0) ? IME_TYPE.LNX_ELECTRON : 
+                          IME_TYPE.WIN_ELECTRON );
+    
+        NT_Initialize("render_div", ime_type);
+        
+        
+
+    </script>
+
+
+<script type = "text/javascript">
+    let ele_nt_filepath = null;
+
+    const FileNameFrom = (filepath)=>{
+        if(filepath===null) return "";
+        const pos1 = Math.max(filepath.lastIndexOf("\\"), filepath.lastIndexOf("/"));
+        if(pos1===-1){
+            return filepath;
+        }else{
+            return filepath.slice(pos1+1);
+        }
+    };
+
+
+    //Menu: File: Open//
+    window.api.on("open_file", (data) => {       
+        console.log("filepath:", data.filepath);
+        NT_SetFilePath(data.filepath);
+        NT_SetMarkdown(data.markdown);
+        ele_nt_filepath = data.filepath;
+
+        NT_ResetChangeFlag();
+        document.title = FileNameFrom(ele_nt_filepath) + " - NowType";
+    });
+
+    //Menu: File: Save//
+    window.api.on("save_file", () => {
+        
+        console.log("fromMain, save_file");
+        const md_text = NT_GetMarkdown();
+
+        window.api.send("save_file_to_main", 
+            {
+                filepath: ele_nt_filepath,
+                markdown: md_text
+            }
+        );
+
+        document.getElementById("savebar").classList.add("savesign");
+        NT_ResetChangeFlag();
+        document.title = FileNameFrom(ele_nt_filepath) + " - NowType";
+
+    });
+    
+    //Menu: File: Save As//
+    window.api.on("save_as", () => {
+        
+        console.log("fromMain, save_as");
+        const md_text = NT_GetMarkdown();
+
+        window.api.send("save_file_to_main", 
+            {
+                filepath: null,
+                markdown: md_text
+            }
+        );
+    });
+
+    
+    document.getElementById("savebar").addEventListener("transitionend", 
+        (event)=>{
+            event.currentTarget.classList.remove("savesign");
+        }, false);
+
+
+    //Menu: File: Save &Save As, catch file path if new file is created//
+    window.api.on("file_path", (arg) => {        
+        ele_nt_filepath = arg.filepath;
+
+        NT_ResetChangeFlag();
+        document.title = FileNameFrom(ele_nt_filepath) + " - NowType";
+    });
+    
+    //Menu: Edit: Undo//
+    window.api.on("undo", () => {        
+        console.log("from main: undo");
+        NT_Dispatch("undo");
+    });
+    
+    //Menu: Edit: Redo//
+    window.api.on("redo", () => {        
+        console.log("from main: redo");
+        NT_Dispatch("redo");
+    });
+    
+    //Menu: Edit: Select All//
+    window.api.on("selectall", () => {        
+        NT_Dispatch("selectall");
+    });
+    
+    //Menu: View: Math Numbering//
+    window.api.on("mathnumbering", (arg) => {        
+        NT_MathNumbering(arg.checked);
+    });    
+
+    //Menu: View: Spellcheck//
+    window.api.on("spellcheck", (arg) => {        
+        document.getElementById("render_div").spellcheck = (arg.checked);
+        console.log("spellcheck", document.getElementById("render_div").spellcheck );
+    });    
+
+    //Menu: View: Change CSS//
+    window.api.on("changecss", () => {        
+        TestChageCSS();
+    });    
+
+    //Menu: View: Show Markdown Text//
+    window.api.on("showmarkdown", () => {        
+        ShowMarkdown('modal1');
+    });
+    
+    //Menu: View: Show HTML//
+    window.api.on("showhtml", () => {        
+        ShowHTML('render_div','modal1');
+    });
+
+    //Menu: File: Print to PDF//
+    window.api.on("pdf_begin", () => {        
+        document.getElementById("pdfbar").classList.add("pdfwait");        
+    });
+    window.api.on("pdf_end", () => {        
+        document.getElementById("pdfbar").classList.remove("pdfwait");        
+    });
+
+    window.onload=(event)=>{
+
+        console.log("window.onload");
+
+        NT_SetMarkdown(document.getElementById("render_div").textContent);
+
+        document.getElementById("render_div").addEventListener("nt_changed", (e)=>{
+            console.log("nt_changed");
+            document.title = FileNameFrom(ele_nt_filepath) + "* - NowType";            
+        });
+        
+
+        //file open by drag and drop
+        document.getElementById("backbox").addEventListener('drop', function(event){
+            event.preventDefault();
+            const file =event.dataTransfer.files[0];
+            TestFileOpen(event.dataTransfer.files[0]);
+        },false);
+
+        //the following "event.dataTransfer.dropEffect" is necessary to bring drop event//
+        document.getElementById("backbox").addEventListener('dragover', function(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+        }, false);
+
+        
+        document.getElementById("modalclose").addEventListener("click", CloseModal, false);
+
+        
+        document.getElementById("backbox").addEventListener("wheel", OnWheel, false);
+
+    };
+
+    function OnWheel(event){
+        //for zoom//
+        if((event.ctrlKey) && (!event.altKey) && (!event.shiftKey)){
+            event.preventDefault();
+            window.api.send("zoom", (event.deltaY > 0) ? -1 : 1);
+        }
+    }
+
+
+
+</script>
+
+</html>
+
+
+
+    
+

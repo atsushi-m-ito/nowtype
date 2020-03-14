@@ -1,0 +1,61 @@
+
+/* This CSS should be load after user CSS
+  because "@media print" is sametimes ignored if user CSS is loaded after this CSS.*/
+
+@page{        
+    size: A4;
+/*  本来は以下の記述で良いはずが、Chromium系バグで設定値より大きくなってしまう
+    margin-left:   15mm;
+    margin-right:  15mm;
+    margin-top:    20mm;
+    margin-bottom: 20mm;
+    回避策として以下のように%で指定する
+    margin-top, margin-bottomの設定は複雑
+        Chrome, Firefox, Edge(Chromium)ページ横幅に対する割合を設定する
+        Edge(Legacy)ページ縦幅に対する割合を設定する
+    7.143% = 15mm / 210mm,  9.524% = 20mm / 210mm != 20mm / 297mm
+    ただしでは
+*/
+    margin-left:   7.143%;
+    margin-right:  7.143%;
+    margin-top:    9.524%;
+    margin-bottom: 9.524%;
+}
+
+
+@media print{
+    #toolbar{ display: none;}
+    #savebar{ display: none;}
+    #pdfbar{ display: none;}
+    .pdfwait{display: none;}
+
+    body{
+        /*width:100%;*/
+        margin: 0mm;
+        padding: 0mm;
+    }
+    div#backbox{
+        width:100%;
+        margin: 0mm;
+        padding: 0mm;
+        
+        position: static; 
+        overflow: visible;
+    }
+    
+    div#paper{
+        width: 100%;
+        margin: 0mm;
+        padding: 0mm;
+        transform: none;
+        -webkit-transform: none;
+    }
+    div#render_div{
+        width:100%;
+        margin: 0mm;
+        padding: 0mm;
+        border:none;
+    }
+    
+
+}

@@ -1,0 +1,239 @@
+﻿<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Now Type: a markdown editor (on web)</title>
+    <link rel="icon" href="./favicon.ico">
+
+    <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css">-->
+    <link rel="stylesheet" href="./katex/katex.min.css">
+    <!-- The loading of KaTeX is deferred to speed up page rendering -->
+    <!--<script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>-->
+    <script src="./katex/katex.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="./style/nt.web.css" id="nt_web_css">
+    <link rel="stylesheet" type="text/css" href="./style/notoserif.css" id="main_css">
+    <link rel="stylesheet" type="text/css" href="./style/nt.print.css" media="all" id="nt_print_css">
+    
+</head>
+<body>
+<div id="toolbar" style="position: fixed; top: 0px; left: 0px; margin: 0; width: 100%; height: 32px; background: #c0dcff">
+    <!--<div class="logo">Now Type</div>-->
+    <img src="./favicon.ico" width="32px" height="32px" style="display:inline;margin: 0px; padding: 0px; vertical-align: middle;" />
+    <div class="version">ver. 0.3.11(dev)</div>
+    <input type="file" id="file_open" />
+    <button type="button" class="intLink" name="save" onclick="TestSave();">Save (DL)</button>
+    
+    <button type="button" class="intLink" name="ZoomUp" onclick="TestZoomin();">Zoom In</button>
+    <button type="button" class="intLink" name="ZoomDown" onclick="TestZoomout();">Zoom Out</button>
+    <button type="button" class="intLink" name="ChangeCSS" onclick="TestChageCSS();">ChangeCSS</button>
+    <input type="checkbox" id="autonumber" name="autonumber" checked="true" >
+    <label for="autonumber" >auto numbering</label>    
+    
+    <button type="button" class="intLink" name="ShowHTML" onclick="ShowHTML('render_div','modal1');">Show HTML</button>
+    <button type="button" class="intLink" name="ShowMD" onclick="ShowMarkdown('modal1');">Show Markdown</button>
+    
+</div>
+<div id="modal1" class="modal1" >
+    <div id="modalclose" class="close" >CLOSE</div>
+    <div class="modaltext" ></div>
+</div>    
+<div id="backbox" ><div id="paper"><div id="render_div" ></div></div></div>
+</body>
+
+<script>
+    "use strict";
+
+    let web_nt_filename = null;
+
+    window.onload = function(){
+        
+
+        //file open by input tag//
+        document.getElementById("file_open").addEventListener("change", function(event){
+            const file = event.target.files[0];
+            TestFileOpen(file);
+        }, false);
+
+        //file open by drag and drop
+        document.getElementById("backbox").addEventListener('drop', function(event){
+            event.preventDefault();
+            const file =event.dataTransfer.files[0];
+            TestFileOpen(event.dataTransfer.files[0]);
+        },false);
+
+        //the following "event.dataTransfer.dropEffect" is necessary to bring drop event//
+        document.getElementById("backbox").addEventListener('dragover', function(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+        }, false);
+
+        document.getElementById("autonumber").addEventListener('change', function(event) {
+            NT_MathNumbering(this.checked);
+        }, false);
+
+        
+        document.getElementById("modalclose").addEventListener("click", CloseModal, false);
+    };
+
+    
+
+    let css_mode = 0;
+    function TestChageCSS(){
+        let main_css = document.getElementById("main_css");
+        
+        if (css_mode === 0){
+            main_css.href = "./style/udgothic.css";
+        }else{
+            main_css.href = "./style/notoserif.css";
+        }
+        css_mode = 1 - css_mode;
+        console.log("css-file: ",main_css.href);
+    }
+
+
+    //file read 
+    function TestFileOpen(file){
+        if (!(window.File && window.FileReader)) {
+            alert("FileAPI is not supported!!");
+            return false;
+        }
+
+        console.log("reading file: ", file.name);
+        
+        const reader = new FileReader();
+        reader.onload = function(){ 
+            NT_SetMarkdown(reader.result);
+        }
+
+        reader.readAsText(file);
+        web_nt_filename = file.name;
+    }
+
+
+    let zoom = 1.0;
+    function TestZoomout(){
+        zoom /= 1.25;
+        /*
+        let render_div = document.getElementById("render_div");
+        render_div.style.fontSize = zoom.toString() + "em";
+        */            
+        const paper = document.getElementById("paper");
+        paper.style.transform = "scale(" + zoom.toString() + ")";
+    }
+
+    function TestZoomin(){
+        zoom *= 1.25;
+        /*
+        let render_div = document.getElementById("render_div");
+        render_div.style.fontSize = zoom.toString() + "em";
+        */
+        
+        const paper = document.getElementById("paper");
+        paper.style.transform = "scale(" + zoom.toString() + ")";
+    }
+
+
+    function CloseModal(event){
+        const modal = event.target.parentNode;
+        modal.style.display='none';
+    }
+    
+    function ShowHTML(a, b) {
+        const main = document.getElementById(a);
+        const modal = document.getElementById(b);
+        const modal_text = modal.getElementsByClassName("modaltext");
+        modal_text[0].textContent = main.outerHTML;
+        modal.style.display = "block";
+    }
+
+    function ShowMarkdown(b) {
+        const modal = document.getElementById(b);
+        const modal_text = modal.getElementsByClassName("modaltext");
+        modal_text[0].textContent = NT_GetMarkdown();
+        modal.style.display = "block";
+    }
+
+
+</script>
+
+<script src="./nowtype.min.js"></script>
+
+<script src="./manual/web.manual.js"></script>
+
+<script>
+//<script type="module">
+//    import {InitMDM} from "./nt.init.js";
+
+    let agent = window.navigator.userAgent.toLowerCase();
+    console.log(agent);
+
+    const ime_type = ((agent.indexOf("windows") >= 0) ? 
+                        (agent.indexOf("edge/") >= 0) ? IME_TYPE.WIN_EDGE_LEGACY : 
+                        (agent.indexOf("edg/") >= 0) ? IME_TYPE.WIN_EDG_CHR : 
+                        (agent.indexOf("chrome/") >= 0) ? IME_TYPE.WIN_CHROME : 
+                        (agent.indexOf("firefox/") >= 0) ? IME_TYPE.WIN_FIREFOX : 
+                            IME_TYPE.GENERAL :
+                        (agent.indexOf("mac os") >= 0) ?   
+                        (agent.indexOf("chrome/") >= 0) ? IME_TYPE.MAC_CHROME : 
+                        (agent.indexOf("firefox/") >= 0) ? IME_TYPE.MAC_FIREFOX : 
+                        (agent.indexOf("safari/") >= 0) ? IME_TYPE.MAC_SAFARI : 
+                        IME_TYPE.MAC_SAFARI : 
+                        (agent.indexOf("linux") >= 0) ? 
+                        (agent.indexOf("chrome/") >= 0) ? IME_TYPE.LNX_CHROME : 
+                        (agent.indexOf("firefox/") >= 0) ? IME_TYPE.LNX_FIREFOX : 
+                        IME_TYPE.GENERAL :                               
+                        IME_TYPE.GENERAL);
+
+    NT_Initialize("render_div", ime_type);    
+    
+    //NT_SetMarkdown(document.getElementById("render_div").textContent);
+    NT_SetMarkdown(nt_web_manual_text);
+
+    document.getElementById("render_div").addEventListener("nt_changed", (e)=>{
+        console.log("nt_changed");
+        document.title = FileNameFrom(web_nt_filename) + "* - NowType";            
+    });
+
+    
+    const FileNameFrom = (filepath)=>{
+        if(filepath===null) return "";
+        const pos1 = Math.max(filepath.lastIndexOf("\\"), filepath.lastIndexOf("/"));
+        if(pos1===-1){
+            return filepath;
+        }else{
+            return filepath.slice(pos1+1);
+        }
+    };
+    
+    
+    document.getElementById("render_div").addEventListener("keydown", OnSaveWeb, false);
+    function OnSaveWeb(event){
+        if(event.isComposing) return;
+        if (event.getModifierState("Control") || event.getModifierState("Meta")){
+            if(event.key==="s"){
+                console.log("keydown ctrl+s on document");
+                TestSave();
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+        }
+    }
+    function TestSave(){
+        
+        const md_text = NT_GetMarkdown();
+
+        const filename = "output2.md";
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([md_text], {type: 'text/plain'}));
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();    
+        document.body.removeChild(a);
+    }
+    
+</script>
+
+
+</html>
