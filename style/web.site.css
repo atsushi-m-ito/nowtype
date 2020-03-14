@@ -1,0 +1,66 @@
+
+/* # this is the CSS for NowType preview on web*/
+
+body {
+    font-size: 12pt;
+    font-family: sans-serif;
+    -webkit-text-size-adjust: 100%;  /* for android */
+    max-height: 100%;    /* for android */      
+    margin: 0px;
+    padding: 0px; 
+    background-color: #022941;
+    color: #eeeeee;
+}
+
+div{
+    font-size: 12pt;
+    margin: 0px;
+    padding: 0px;
+}
+
+div.title{
+    color: #333333;
+    background-color: #97d8ff;
+}
+div.title1{
+    font-size: 32pt;
+    font-weight: bold;
+    text-align: center;
+}
+div.title2{
+    font-size:16pt;
+    font-weight: bold;
+    text-align: center;
+}
+
+div.contents{
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+
+h1{
+    font-size: 24pt;    
+}
+h2{
+    font-size: 20pt;    
+}
+p{
+    font-size: 12pt;    
+}
+
+a{
+    color: #7ede7e;
+}
+a:visited{
+    color: #dede7e;    
+}
+
+div.demo{    
+    text-align: center;
+}
+a.demo{
+    color: #97d8ff;
+    font-weight: bold;
+    font-size: 24pt;
+}

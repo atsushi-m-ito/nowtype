@@ -1,0 +1,15 @@
+/node_modules
+/dist
+.DS_Store
+/font
+/sample_md
+/icon
+/*.pdf
+/note
+/research
+/sample_md
+package-lock.json
+/katex/contrib
+/katex/contrib_ignored
+/ele.*
+/src
