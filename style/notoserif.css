@@ -42,6 +42,7 @@ div#render_div{
     margin-left: auto;
     margin-right: auto;
     border: dotted  1px;
+    outline: none;    /* this is necessary to prevent that the border added by browser when element get the focus */
     white-space: pre-wrap;
 }
 

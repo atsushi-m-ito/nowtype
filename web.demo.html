@@ -23,7 +23,7 @@
 <div id="toolbar" style="position: fixed; top: 0px; left: 0px; margin: 0; width: 100%; height: 32px; background: #c0dcff">
     <!--<div class="logo">Now Type</div>-->
     <img src="./favicon.ico" width="32px" height="32px" style="display:inline;margin: 0px; padding: 0px; vertical-align: middle;" />
-    <div class="version">ver. 0.3.14(wev)</div>
+    <div class="version">ver. 0.3.16(web)</div>
     <input type="file" id="file_open" />
     <button type="button" class="intLink" name="save" onclick="TestSave();">Save (DL)</button>
     
@@ -194,9 +194,10 @@
     //NT_SetMarkdown(nt_web_manual_text);
     fetch("./manual/manual.md").then(function(response) {
         return response.text();
-    }).then(function(text) {
-        // textに文字列で結果が渡される
+    }).then(function(text) {        
         NT_SetMarkdown(text);
+    }).catch(function(error){
+        NT_SetMarkdown("");
     });
 
     document.getElementById("render_div").addEventListener("nt_changed", (e)=>{
