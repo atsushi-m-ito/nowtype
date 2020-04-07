@@ -25,21 +25,27 @@ function MO_OnCompositionChange(record_list){
                 let new_target_update = true;
                 if(MO_update_list.length > 0){
                     const last = MO_update_list[MO_update_list.length-1];
-                    if((last.type === record.type) && (last.target === record.target)){
+                    if((last.record.type == record.type) && (last.record.target === record.target)){
                         new_target_update = false;
                         console.log("MutationObserver detect (not new):",last.type,"\n", last.oldValue, "\nto\n", last.target);
                     }
                 }
                 if(new_target_update){
-                    MO_update_list.push(record);
+                    MO_update_list.push({record:record, offset: GetIndex(record.target.parentNode, record.target)});
                     console.log("MutationObserver detect:",record.type,"\n", record.oldValue, "\nto\n", record.target);
                 }
             }else if(record.type==="childList"){
-                MO_update_list.push(record);
-                console.log("MutationObserver detect:", 
-                    (record.addedNodes.length>0) ? "add" : "remove" , "\n", 
-                    (record.addedNodes.length>0) ? record.addedNodes.item(0) : record.removedNodes.item(0),
-                    "\non\n", record.target);
+                if(record.addedNodes.length>0){
+                    const offset = GetIndex(record.target, record.addedNodes.item(0));
+                    MO_update_list.push({record:record, offset: offset});
+                    console.log("MutationObserver detect: add\n", 
+                        record.addedNodes.item(0), "\non offset=",offset,"\n", record.target);
+                }else{
+                    const offset = GetIndex(record.target, record.nextSibling);
+                    MO_update_list.push({record:record, offset: offset});
+                    console.log("MutationObserver detect: remove\n", 
+                        record.removedNodes.item(0), "\non offset=",offset,"\n", record.target);
+                }
             }
             
         });
@@ -162,7 +168,8 @@ function MO_RegisterIMEUpdate(){
     
     undo_man.Begin(MO_IME_node_origin, MO_IME_offset_origin);
     
-    MO_update_list.forEach( (record) => {
+    MO_update_list.forEach( (record_offset) => {
+        const record = record_offset.record;
         if(record.type==="characterData"){
             console.log("IME: regarded, replace all text data in the node");
                         
@@ -173,18 +180,18 @@ function MO_RegisterIMEUpdate(){
         }else if(record.type==="childList"){
             if(record.addedNodes.length>0){
                 const parent = record.target;
-                let offset = GetIndex(parent, record.addedNodes.item(0));
+                let offset = record_offset.offset;
                 record.addedNodes.forEach( (node)=>{
-                    console.log("IME: added node", node);
+                    console.log("IME: added node", node, ", offset=", offset);
                     undo_man.Register(UR_TYPE.ADD_NODE, node, parent, offset, 1);
                     ++offset;
                 });
             }
-            if(record.removedNodes.length>0){
+            else if(record.removedNodes.length>0){
                 const parent = record.target;
-                const offset = GetIndex(parent, record.nextSibling);                
+                const offset = record_offset.offset;
                 record.removedNodes.forEach( (node)=>{
-                    console.log("IME: removed node", node);
+                    console.log("IME: removed node", node, ", offset=", offset);
                     undo_man.Register(UR_TYPE.REMOVE_NODE, node, parent, offset, 1);                    
                 });
             }

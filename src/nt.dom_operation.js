@@ -386,7 +386,7 @@ function DeleteText(node, offset, length = 1) {
     console.log("delete text", offset, length);
 
     if (node.length <= offset) {
-        alert("node focus is invalid"); return;
+        alert("node focus is invalid"); return null;
     }
 
 
@@ -674,7 +674,7 @@ function UndoAddNode(operation_info) {
     const offset = operation_info.offset;
     if(parent.childNodes.item(offset)!== node){
         if(parent.childNodes.item(offset).nodeName!==node.nodeName){
-            alert("ERROR: added node does not exit!");
+            alert("ERROR: added node does not exist!");
             return;
         }else{
             console.log("NOTINE: added node does not exist, but same type node is added already.");

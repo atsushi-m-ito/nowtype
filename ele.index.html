@@ -130,6 +130,16 @@
     
         NT_Initialize("render_div", ime_type);
         
+        {
+            const render_div = document.getElementById("render_div");
+            render_div.addEventListener("contextmenu", OnComtextMenuForElecron, false);
+        }
+
+        function OnComtextMenuForElecron(event){
+            event.preventDefault();
+            console.log("OnComtextMenuForElecron");
+            window.api.send("showcontextmenu" );
+        };
         
 
     </script>

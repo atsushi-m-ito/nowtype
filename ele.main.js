@@ -9,6 +9,8 @@ let mainWindow = null;
 let nowtype_icon;
 let is_close_after_save = false;
 
+let context_menu = null;
+
 const CreateWindow = () => {
     // mainWindowを作成（windowの大きさや、Kioskモードにするかどうかなどもここで定義できる）
     mainWindow = new BrowserWindow({width: 1024, height: 768, 
@@ -49,6 +51,7 @@ const CreateWindow = () => {
     });
 
     createMenu();
+    context_menu = CreateContextMenu();
 
     mainWindow.webContents.once('did-finish-load',() =>{
         console.log("show");
@@ -290,10 +293,74 @@ function createMenu() {
             ]
         }
     ];
-    const menu = Menu.buildFromTemplate(template)
+    const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
 }
 
+
+// メニューの作成
+function CreateContextMenu() {
+    const template = [
+                {
+                    label: 'Undo..',
+                    accelerator: 'CmdOrCtrl+Z', // ショートカットキーを設定
+                    click: (menuItem, browserWindow, event) => { 
+                        if(! event.triggeredByAccelerator){
+                            MenuSimpleSend("undo");                             
+                        }
+                    }
+                },
+                {
+                    label: 'Redo..',
+                    accelerator: 'CmdOrCtrl+Shift+Z', //
+                    click: (menuItem, browserWindow, event) => { 
+                        if(! event.triggeredByAccelerator){
+                            MenuSimpleSend("redo"); 
+                        }
+                    } // 
+                },                
+                {type: 'separator'},
+                {
+                    label: 'Cut..',
+                    accelerator: 'CmdOrCtrl+X', //
+                    click: (menuItem, browserWindow, event) => { 
+                        if(! event.triggeredByAccelerator){
+                            browserWindow.webContents.cut();  //sending cut command//
+                        }
+                    } // 
+                },
+                {
+//                    role: "copy",
+                    label: 'Copy..',                    
+                    accelerator: 'CmdOrCtrl+C', //
+                    click: (menuItem, browserWindow, event) => { 
+                        if(! event.triggeredByAccelerator){
+                            browserWindow.webContents.copy(); //sending copy command//
+                        }
+                    }
+                },
+                {
+                    label: 'Paste..',
+                    accelerator: 'CmdOrCtrl+V', //
+                    click: (menuItem, browserWindow, event) => { 
+                        if(! event.triggeredByAccelerator){
+                            browserWindow.webContents.paste();  //sending paste command//
+                        }
+                    }
+                },
+                {type: 'separator'},
+                {
+                    label: 'Select All..',
+                    accelerator: 'CmdOrCtrl+A', //
+                    click: (menuItem, browserWindow, event) => { 
+                        if(! event.triggeredByAccelerator){
+                            MenuSimpleSend("selectall"); 
+                        }
+                    } // 
+                },
+            ];
+    return Menu.buildFromTemplate(template);
+}
 
 async function OpenFile() {
     console.log("before open file");
@@ -505,3 +572,6 @@ async function MenuPrintToPDF(browserWindow){
 }
 
 
+ipcMain.on("showcontextmenu", (event)=>{
+    context_menu.popup();
+});

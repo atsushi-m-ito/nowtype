@@ -174,11 +174,11 @@ function TryInputAsciiChar(char) {
     
 
     switch (char) {        
-        case "$":    // insert math node//
-        case "`":    // insert inline code node//
-        case "*":    // insert string and em node//
-        case "_":    // insert string and em node//
-        case "[":    // insert a and figure //
+        case '$':    // insert math node//
+        case '`':    // insert inline code node//
+        case '*':    // insert string and em node//
+        case '_':    // insert string and em node//
+        //case '[':    insert a and figure //
             {  // insert math node//
 
                 
@@ -192,25 +192,25 @@ function TryInputAsciiChar(char) {
                 return true;
             }
             break;            
-        case " ":
+        case ' ':
             {
                 
                 if (selection.isCollapsed) {
                     const res = SwitchInputSpace(node, offset);
                     if(!res){
-                        SwitchInputChar(" ", node, offset);                        
+                        SwitchInputChar(char, node, offset);                        
                     }
                     
                 }
                 return true;
             }
             break;
-        case "|":
+        case '|':
             {
                 if (selection.isCollapsed) {
                     const res = SwitchInputBar(node, offset);
                     if(!res){
-                        SwitchInputChar("|", node, offset);
+                        SwitchInputChar(char, node, offset);
                     }
                 
                 }
@@ -218,29 +218,38 @@ function TryInputAsciiChar(char) {
                 return true;
             }
             break;
-        case "^":
+        case '^':
             {
                 if (selection.isCollapsed) {
                     const res = SwitchInputHat(node, offset);
                     if(!res){
-                        SwitchInputChar("^", node, offset);
+                        SwitchInputChar(char, node, offset);
                     }
                 
                 }
-                return true;
+                return true;                
+            }
+            break;
+        case '(':
+            {
+                if (selection.isCollapsed) {
+                    const res = SwitchInputRoundBra(node, offset);
+                    if(!res){
+                        SwitchInputChar(char, node, offset);
+                    }
                 
+                }
+                return true;                
             }
             break;
         default:
             {
                 console.log("keydown: " + char);
 
-
                 // accept to input text//
 
                 if(char){
-                    if (char.length === 1) {
-                        
+                    if (char.length === 1) {                        
 
                         if (!selection.isCollapsed) {
                             CutSelection(event.currentTarget, selection);                            
@@ -507,16 +516,19 @@ function SwitchInputEnter(node, offset, is_shift) {
                 const fragment = SafeRemoveNodeList(node, node.childNodes.item(offset));
                 let focus = SafePushNodeList(new_node, fragment);
                 
-                
-                if (IsSpanMathImg(new_node.firstChild.nextSibling)){
-                    const figure = ConvertPtoFigure(new_node);
-                    focus = FocusOffsetZero(figure.lastChild);
-                    
-                }else {
-                    if (IsSpanMathCite(new_node.firstChild.nextSibling)){
-                        ConvertMathCiteToRef(new_node.firstChild.nextSibling);
-                    }
 
+                if(new_node.firstChild.nodeType===Node.TEXT_NODE){
+                    if(new_node.firstChild.data== nt_ZWBR){
+                        if (IsSpanMathImg(new_node.firstChild.nextSibling)){
+                            const figure = ConvertPtoFigure(new_node);
+                    //        focus = FocusOffsetZero(figure.lastChild);
+                            
+                        }else {
+                            if (IsSpanMathCite(new_node.firstChild.nextSibling)){
+                                ConvertMathCiteToRef(new_node.firstChild.nextSibling);
+                            }
+                        }
+                    }
                 }
 
                 document.getSelection().collapse(focus.node, focus.offset);
@@ -2730,6 +2742,7 @@ function SwitchInputMath(mark, node, offset) {
     case '_':
         class_name = "editem";
         break;
+    /*
     case '[':
         class_name = "edita";
         if((node.nodeType === Node.TEXT_NODE) && (offset>0)){
@@ -2739,6 +2752,7 @@ function SwitchInputMath(mark, node, offset) {
             }
         }
         break;
+    */
     default:
         return;
     }
@@ -2830,6 +2844,7 @@ function SwitchInputMath(mark, node, offset) {
                 AddTextNode(nt_ZWBR, parent, math.nextSibling);
             }
 
+            /*
             if(mark==="!["){
                 if(node.length===1){
                     RemoveNode(node);
@@ -2843,6 +2858,7 @@ function SwitchInputMath(mark, node, offset) {
                 }
                 
             }
+            */
             
             const focus = EnableMathEdit(math, 1);            
             document.getSelection().collapse(focus.node, focus.offset);
@@ -3270,11 +3286,14 @@ function SwitchInputShiftTab( node, offset) {
             if(!org_ol.hasChildNodes()){
                 RemoveNode(org_ol);
             }
-            if(IsSpanMathImg(p_node.firstChild.nextSibling)){
-                ConvertPtoFigure(p_node);               
-                
-            }else if (IsSpanMathCite(p_node.firstChild.nextSibling)){
-                ConvertMathCiteToRef(p_node.firstChild.nextSibling);                
+            if(p_node.firstChild.nodeType==Node.TEXT_NODE){
+                if(p_node.firstChild.data==nt_ZWBR){
+                    if(IsSpanMathImg(p_node.firstChild.nextSibling)){
+                        ConvertPtoFigure(p_node);                        
+                    }else if (IsSpanMathCite(p_node.firstChild.nextSibling)){
+                        ConvertMathCiteToRef(p_node.firstChild.nextSibling);                
+                    }
+                }
             }
 
             document.getSelection().collapse(focus.node, focus.offset);
@@ -3439,27 +3458,23 @@ function IsSpanMathCite(node){
 
 function ConvertMathCiteToRef(math_cite){
     
-    const math = document.createElement("SPAN");
-    math.className = "math";
+    const frag = new DocumentFragment();
+    //const math = document.createElement("SPAN");
+    //math.className = "math";
     const preview = document.createElement("SPAN");
     preview.className = "previewref";
     const text = math_cite.lastChild.firstChild.data;
     preview.appendChild(document.createTextNode(text.slice(2,text.length-2)));
-    math.appendChild(preview);
+    frag.appendChild(preview);
     const edit = document.createElement("SPAN");
     edit.className = "editref";
     edit.appendChild(document.createTextNode(text.slice(0,text.length-1)+":"));
-    math.appendChild(edit);
-    SetHide(math.lastChild);
-    const frag = new DocumentFragment();
-    frag.appendChild(math);
-    AddNodeList(math_cite.parentNode, math_cite, frag);//this becomes safe by the following SafeJunctionPoint//
-    const math_next = math_cite.nextSibling;
-    RemoveNode(math_cite);
-    SafeJunctionPoint(math.parentNode, math);
-    if(math_next){
-        SafeJunctionPoint(math.parentNode, math_next);
-    }
+    frag.appendChild(edit);
+    SetHide(frag.lastChild);
+    RemoveNode(math_cite.firstChild);
+    RemoveNode(math_cite.firstChild);
+    AddNodeList(math_cite, null, frag);//this becomes safe by the following SafeJunctionPoint//    
+    
 }
 
 function IsSpanMathRef(node){
@@ -3472,28 +3487,22 @@ function IsSpanMathRef(node){
 
 function ConvertMathRefToCite(math_ref){
 
-    const math = document.createElement("SPAN");
-    math.className = "math";
+    const frag = new DocumentFragment();
     const preview = document.createElement("A");
     preview.className = "previewcite";
     const text = math_ref.lastChild.firstChild.data;
     preview.appendChild(document.createTextNode(text.slice(2,text.length-2)));
     preview.href="#" + text.slice(2,text.length-2);        
-    math.appendChild(preview);
+    frag.appendChild(preview);
     const edit = document.createElement("SPAN");
     edit.className = "editcite";
     edit.appendChild(document.createTextNode(text.slice(0, text.length-1)+" "));
-    math.appendChild(edit);
+    frag.appendChild(edit);
     SetHide(math.lastChild);
-    const frag = new DocumentFragment();
-    frag.appendChild(math);
-    AddNodeList(math_ref.parentNode, math_ref, frag);//this becomes safe by the following SafeJunctionPoint//
     const math_next = math_ref.nextSibling;
-    RemoveNode(math_ref);
-    SafeJunctionPoint(math.parentNode, math);
-    if(math_next){
-        SafeJunctionPoint(math.parentNode, math_next);
-    }    
+    RemoveNode(math_ref.firstChild);
+    RemoveNode(math_ref.firstChild);
+    AddNodeList(math_ref, null, frag);
 }
 
 /*
@@ -3698,56 +3707,133 @@ function SwitchInputBar(node, offset) {
 Input "^". In paticular, input into [] position
 */
 function SwitchInputHat(node, offset) {
-    if (node === null) return false;
-    if (!IsTextNodeInMath(node)) return false;
-
-    const edit = node.parentNode;
-    if(edit.className!=="edita") return false;
-
-    const old_math = edit.parentNode;
-
-    const text = edit.firstChild.data;
-    let head_word;
-    let after_word = "";
-    let sb_end = text.indexOf("]", 1);
-    if(sb_end > 0){
-        head_word = text.slice(1,sb_end);
-        const rb_begin = text.indexOf("(", sb_end+1);
-        if(rb_begin > 0){
-            const rb_end = text.indexOf(")", rb_begin+1);
-            after_word = text.slice(rb_begin+1,rb_end);
-            after_word.trim();
+    if (node === null) return true;
+    
+    if(node.nodeType != Node.TEXT_NODE) return true;// for preventDefault() //
+    
+    if (IsTextNodeInMath(node)){
+        if(["edita","editimg","editcite","editref"].includes(node.parentNode.className)){
+            return true; // for preventDefault() //
         }
-        
+    }
+    
+    //here, node is TEXT //
+    if(node.data.charAt(offset-1) != '[') return false;
+    const pos_sq_bra = offset-1;
+
+    let cut_end = node.data.indexOf(']', offset);
+    let sq_text;
+    if(cut_end < 0){ //cannot find round ket ')' //
+        cut_end = offset;
+        sq_text = node.data.slice(pos_sq_bra, offset) + "^] ";
     }else{
-        head_word = text.slice(1);
+        cut_end++;
+        sq_text = node.data.slice(pos_sq_bra, offset) + "^" + node.data.slice(offset, cut_end) + " ";
+    }
+
+    undo_man.Begin(node, offset);
+    let rm_node = node;
+    if(cut_end < node.length){
+        DivideTextNode(node, cut_end);
+    }
+
+    if(pos_sq_bra > 0){
+        rm_node = DivideTextNode(node, pos_sq_bra);
+    }
+
+    const math = AddMathNode('[^', node.parentNode, rm_node);
+    
+    RemoveNode(rm_node);
+    SafeJunctionPoint(math.parentNode, math);
+    SafeJunctionPoint(math.parentNode, math.nextSibling);
+
+    const math_text = math.lastChild.firstChild;
+    InsertTextIntoText(sq_text, math_text, 0);
+    DeleteText(math_text, sq_text.length, math_text.length);
+
+    if(math.parentNode.nodeName == "P"){
+        if(math.previousSibling.data == nt_ZWBR){
+            if(math.previousSibling.previousSibling===null){                
+                ConvertMathCiteToRef(math);
+            }
+        }
+    }
+
+    
+    const focus = EnableMathEdit(math, offset - pos_sq_bra + 1);
+    document.getSelection().collapse(focus.node, focus.offset);
+    undo_man.End(focus.node, focus.offset);
+
+    
+    return true;  // to default input //
+}
+
+
+function SwitchInputRoundBra(node, offset) {
+    if (node === null) return true;    
+    
+    if(node.nodeType != Node.TEXT_NODE) return false; //expecting BR node, to default input //
+    
+    if (IsTextNodeInMath(node)) return false;
+    
+    //here, node is TEXT //
+    
+    if(node.data.charAt(offset-1) != ']') return false;
+    let pos_sq_bra = node.data.lastIndexOf('[', offset-1);
+    if(pos_sq_bra < 0) return false;
+
+    let is_img = false;
+    if(node.data.charAt(pos_sq_bra-1) == '!') {
+        pos_sq_bra--; //check img tag//
+        is_img = true;
+    }
+    
+    let cut_end = node.data.indexOf(')', offset);
+    let sq_text;
+    if(cut_end < 0){ //cannot find round ket ')' //
+        cut_end = offset;
+        sq_text = node.data.slice(pos_sq_bra, offset) + "()";
+    }else{
+        cut_end++;
+        sq_text = node.data.slice(pos_sq_bra, offset) + "(" + node.data.slice(offset, cut_end);
+    }
+    if(is_img){
+        sq_text += " ";
     }
     
     undo_man.Begin(node, offset);
-    const parent = old_math.parentNode;
-    const new_math = AddMathNode("[^", parent, old_math);
-    const new_edit_text = new_math.lastChild.firstChild;
-    InsertTextIntoText(head_word, new_edit_text, 2);
-    RemoveNode(old_math);
+    let rm_node = node;
+    if(cut_end < node.length){
+        DivideTextNode(node, cut_end);
+    }
 
+    if(pos_sq_bra > 0){
+        rm_node = DivideTextNode(node, pos_sq_bra);
+    }
+
+    const math = AddMathNode((is_img) ? '![' : '[', node.parentNode, rm_node);
     
-    if((after_word.length > 0) && (after_word !== NT_LINK_DEFAULT_URL)){
-        const next = new_math.nextSibling;
-        let is_text_node = false;
-        if(next){
-            if( next.nodeType === Node.TEXT_NODE ){
-                is_text_node = true;
-                InsertTextIntoText(after_word, next, 0);
+    RemoveNode(rm_node);
+    SafeJunctionPoint(math.parentNode, math);
+    SafeJunctionPoint(math.parentNode, math.nextSibling);
+
+    const math_text = math.lastChild.firstChild;
+    InsertTextIntoText(sq_text, math_text, 0);
+    DeleteText(math_text, sq_text.length, math_text.length);
+
+    if(math.parentNode.nodeName == "P"){
+        if(math.previousSibling.data == nt_ZWBR){
+            if(math.previousSibling.previousSibling===null){                
+                ConvertPtoFigure(math.parentNode);
             }
-        }
-        if(!is_text_node){
-            AddTextNode(after_word, parent, next);
         }
     }
 
-    const focus = EnableMathEdit(new_math, 2);
+    
+    const focus = EnableMathEdit(math, offset - pos_sq_bra + 1);
     document.getSelection().collapse(focus.node, focus.offset);
     undo_man.End(focus.node, focus.offset);
+            
     return true;
 }
 

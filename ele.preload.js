@@ -18,7 +18,7 @@ contextBridge.exposeInMainWorld(
     "api", {
         send: (channel, data) => {
             // whitelist channels
-            const valid_channels = ["save_file_to_main","zoom"];
+            const valid_channels = ["save_file_to_main","zoom","showcontextmenu"];
             if (valid_channels.includes(channel)) {
                 ipcRenderer.send(channel, data);
             }

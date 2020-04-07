@@ -144,20 +144,11 @@ function NT_Initialize(target_div_id, ime_type) {
     render_div.addEventListener("cut", OnCut, false);
     render_div.addEventListener("copy", OnCopy, false);
     render_div.addEventListener("paste", OnPaste, false);
-    render_div.addEventListener("click", OnClickMath, false);
+    //render_div.addEventListener("click", OnClickMath, false);
+    document.addEventListener("click", OnClickMath, false);   //document is necessary to handle mouseup at the out of windows//
+    
     //undo/redo is not the event supported by browser//
     
-/*
-    console.log("MutationObserver Create");
-    //MutationObserver
-    const observer = new MutationObserver((record_list) => { 
-        record_list.forEach(record => {
-            console.log("MutationObserver detect:",record.type,"\n", record.oldValue, "\nto\n", record.target);
-        });
-        
-    });
-    observer.observe(render_div,{childList:true, characterData:true, characterDataOldValue:true, subtree:true});
-*/    
     //undo_man 
     undo_man = new UndoManager();
     undo_man.SetChangeEventDispatcher(new ChangeEventDispatcher(render_div));

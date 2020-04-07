@@ -25,58 +25,57 @@ let g_editable_math = null;
 let g_auto_numbering = true;
 
 function OnClickMath(event){
-    
-    const clicked_node  = document.elementFromPoint(event.clientX, event.clientY);
-    if(clicked_node === null)return;
-    
-    console.log("fook click: " + clicked_node, document.getSelection().focusNode, document.getSelection().focusOffset);
-    
-    const focus_math = CheckNodeInClass(clicked_node,"math", event.currentTarget);
-    if(focus_math===null){
-        DisableEdit(g_editable_math, false);
+    const selection = document.getSelection();
 
-        const sel_is_math = CheckNodeInClass(document.getSelection().focusNode,"math", event.currentTarget);
-        if(sel_is_math){
-            const focus = EnableMathEdit(sel_is_math, 1);
-            document.getSelection().collapse(focus.node, focus.offset);
+    let clicked_node  = document.elementFromPoint(event.clientX, event.clientY);
+    let focus_math = CheckNodeInClass(clicked_node,"math", nt_render_div);
+    if(focus_math === null){
+        
+        clicked_node = selection.focusNode;
+        focus_math = CheckNodeInClass(clicked_node,"math", nt_render_div);
+    }
+
+    if(focus_math === null){
+        if(! selection.isCollapsed){
+            if(CheckNodeInClass(selection.anchorNode,"math", nt_render_div)){
+                selection.collapse(selection.focusNode, selection.focusOffset);
+            }
         }
+        DisableEdit(g_editable_math, false);
         return;
     }
 
     if(g_editable_math !== focus_math){
-
+            //new math is clicked//
+        
         const math_class = focus_math.lastChild.className;
         if(["editmath","editmathdisp","editimg"].includes(math_class)){
-            //cannot catch focus position in preview text because preview is not simple text//
             DisableEdit(g_editable_math, false);
             const math_text = EnableMathEdit(focus_math, 1);
-            if(event.shiftKey){
-                document.getSelection().extend(math_text.node, math_text.offset);
-            }else{
-                document.getSelection().collapse(math_text.node, math_text.offset);
-            }
+            document.getSelection().collapse(math_text.node, math_text.offset);
         }else{
-            const focus_node = document.getSelection().focusNode;
-            let focus_offset = document.getSelection().focusOffset;
-            console.log("focus_offset",focus_offset);
+            let focus_offset = document.getSelection().focusOffset;            
+            let anchor_offset = (document.getSelection().anchorNode === document.getSelection().focusNode) ? document.getSelection().anchorOffset : focus_offset;
+            
             DisableEdit(g_editable_math, false);
             const math_text = EnableMathEdit(focus_math, 1);
             const margin = GetEditMarginByClassName(math_class);
             focus_offset += margin;
+            anchor_offset += margin;
             if(math_class==="editcodedisp"){
                 if(math_text.node.data.charAt(3)==='\n'){
                     focus_offset++;
+                    anchor_offset++;
                 }
             }
             
-            if(event.shiftKey){
-                document.getSelection().extend(math_text.node, focus_offset);
+            if(anchor_offset != focus_offset){
+                document.getSelection().setBaseAndExtent(math_text.node, anchor_offset,math_text.node, focus_offset);
             }else{
                 document.getSelection().collapse(math_text.node, focus_offset);
             }
-            
         }
-    }
+    }               
     
 }
 
@@ -126,6 +125,17 @@ function CheckNodeInClass(ref_node, target_class_name, master_node){
             }
         }
 
+        node = node.parentNode;
+    }
+    return null;
+}
+
+function CheckNodeInNode(ref_node, target_node){
+    let node = ref_node;
+    while(node){
+        if(node === target_node){
+            return node;
+        }
         node = node.parentNode;
     }
     return null;

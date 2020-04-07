@@ -7,6 +7,7 @@ function OnCut(event){
     event.preventDefault();
 
     let fragment = CutSelection(event.currentTarget, document.getSelection());
+    if(fragment===null) return;
 
     if(event.clipboardData){
         let md_text = DOM2MD(fragment);
@@ -28,10 +29,13 @@ function OnCopy(event){
     if(event.clipboardData){
         undo_man.GetChangeEventDispatcher().Disable();
         const fragment = CutSelection(event.currentTarget, document.getSelection());
-        ExecUndo();
+        if(fragment){
+            ExecUndo();
+        }
         undo_man.Shrink();
         undo_man.GetChangeEventDispatcher().Enable();
-    
+        if(fragment===null) return;
+
         const md_text = DOM2MD(fragment);
         event.clipboardData.setData("text/plain", md_text);
         
@@ -87,8 +91,9 @@ function OnPaste(event){
 ***/
 function CutSelection(master_node, selection){
 
-
+    if(selection.isCollapsed){return null};
     if(selection.rangeCount === 0){return null;}
+    
     const range = selection.getRangeAt(0);
     const start_node = range.startContainer;
     const start_offset = range.startOffset;
@@ -213,7 +218,12 @@ function CutSelection(master_node, selection){
     }
     let cut_fragment = RemoveNodeList(common_parent, ref_begin, ref_end);
     
-    let focus = ConnectionNodeRecursive(ref_end);
+    let focus;
+    if(ref_end){
+        focus = ConnectionNodeRecursive(ref_end);
+    }else{
+        focus = SafeJunctionPoint(common_parent, ref_end);
+    }
     let next_focus_node = focus.node;
     let next_focus_offset = focus.offset;
     
@@ -408,28 +418,28 @@ function RecoveryPandFigure(node){
     switch(node.nodeName){
     case "P":
         {
-            if(IsSpanMathImg(node.firstChild)){
-                ConvertPtoFigure(node);
-            }else if(node.firstChild.nodeType===Node.TEXT_NODE){
+            if(node.firstChild.nodeType===Node.TEXT_NODE){
                 if(node.firstChild.data == nt_ZWBR){
                     if(IsSpanMathImg(node.firstChild.nextSibling)){
                         ConvertPtoFigure(node);
                     }
                 }
+            }else if(IsSpanMathImg(node.firstChild)){
+                ConvertPtoFigure(node);
             }
         }
         break;
     case "FIGURE":
         {
             let is_figure = false;
-            if(IsSpanMathImg(node.firstChild)){
-                is_figure = true;
-            }else if(node.firstChild.nodeType===Node.TEXT_NODE){
+            if(node.firstChild.nodeType===Node.TEXT_NODE){
                 if(node.firstChild.data == nt_ZWBR){
                     if(IsSpanMathImg(node.firstChild.nextSibling)){
                         is_figure = true;
                     }
                 }
+            }else if(IsSpanMathImg(node.firstChild)){
+                is_figure = true;
             }
             if(!is_figure){
                 ConvertFiguretoP(node);
@@ -596,7 +606,7 @@ function PasteTopLevelNodes(node, offset, fragment, master_node){
         }        
     }else{//such as BR//
         parent = node.parentNode;
-        pos_after = GetIndex(parent, node);
+        pos_after = node;
     }
 
     
@@ -703,7 +713,7 @@ function PasteTopLevelNodes(node, offset, fragment, master_node){
         const ref_first = AddNodeList(master_node, ref_node, fragment);//this becoes safe by the following ConnectionNodeRecursive//   
         
         ConnectionNodeRecursive(ref_first);
-        const focus = ConnectionNodeRecursive(ref_node);
+        const focus = (ref_node) ? ConnectionNodeRecursive(ref_node) : SafeJunctionPoint(parent, ref_node);
         
         RecoveryPandFigure(master_node);
 
