@@ -1,7 +1,7 @@
 "use strict";
 
 //type//
-const {electron,BrowserWindow,Menu, app, ipcMain,dialog, nativeImage,webContents} = require('electron');
+const {BrowserWindow,Menu, app, ipcMain,dialog, nativeImage,shell} = require('electron');
 const fs = require('fs');
 
 
@@ -259,6 +259,8 @@ function createMenu() {
         {
             label: 'Help',
             submenu: [
+                
+                {type: 'separator'},
                 {
                     label: 'Dev Tools..',
                     accelerator: 'F12', 
@@ -268,6 +270,7 @@ function createMenu() {
                         mainWindow.webContents.openDevTools(); 
                     }
                 },
+                {type: 'separator'},
                 /*{
                     label: 'Test..',
                     accelerator: 'CmdOrCtrl+Q', 
@@ -277,6 +280,12 @@ function createMenu() {
 
                     }
                 },*/
+                {
+                    label: 'web site',
+                    click: (menuItem, browserWindow, event) =>{
+                        shell.openExternal('https://atsushi-m-ito.github.io/nowtype/');
+                    }
+                },
                 {
                     label: 'about',
                     click: (menuItem, browserWindow, event) =>{

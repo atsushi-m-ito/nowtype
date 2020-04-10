@@ -1449,7 +1449,7 @@ function PrepareZWBR2(parent){
         case "H5":
         case "H6":
         case "LI":
-        case "FIGURE":
+        /*case "FIGURE":*/
         case "FIGCAPTION":
         case "TD":
         case "TH":
@@ -1484,7 +1484,7 @@ function PrepereZWBR_funcP2(p_node){
             break;
         case "OL":
         case "UL":
-        case "FIGCAPTION":
+        /*case "FIGCAPTION":*/
             if( is_prev_math ){
                 if(node.previousSibling){
                     p_node.insertBefore(document.createTextNode(nt_ZWBR), node);
@@ -1514,7 +1514,7 @@ function PrepereZWBR_funcP2(p_node){
 const AssertAllforMath = (parent)=>{
     
     for(let node = parent.firstChild; node; node = node.nextSibling){
-        if(["P","H1","H2","H3","H4","H5","H6","LI","FIGURE","FIGCAPTION","TD","TH"].includes(node.nodeName)){
+        if(["P","H1","H2","H3","H4","H5","H6","LI",/*"FIGURE",*/"FIGCAPTION","TD","TH"].includes(node.nodeName)){
             AssertValidateMathInParent(node);            
         }
 

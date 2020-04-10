@@ -921,6 +921,10 @@ function SwitchInputDelete(node, offset, is_shift) {
                         undo_man.Cancel();
                         return; //remain the final low//
                     }
+                    if (node.nextSibling.nodeName=="FIGURE") {
+                        undo_man.Cancel();
+                        return; //remain the final low//
+                    }
                             
                     const next = node.nextSibling;
                     RemoveNode(node);
@@ -2470,26 +2474,56 @@ function SwitchInputArrowLeft(node, offset, is_shift) {
     if (node.nodeType === Node.TEXT_NODE) {
         if(IsTextNodeInMath(node)){
             const math = node.parentNode.parentNode;
-            
             if(offset <= 1){
-                
-                const res = DisableEdit(math);
-                if(res.removed){
-                    document.getSelection().collapse(res.focus.node, res.focus.offset);
-                }else{
-                    const focus = FocusOffsetLast(math.previousSibling);
-                    if(focus){ 
-                        if(focus.node.nodeType === Node.TEXT_NODE){
-                            if(focus.node.data == nt_ZWBR){
-                                focus.offset = 0;
-                            }
-                        }                        
+            
+                if((math.parentNode.nodeName == "FIGURE") && (math.previousSibling === null)){
+                    const figure = math.parentNode;
+                    const res = DisableEdit(math);
+                    if(res.removed){
+                        const p_node = ConvertFiguretoP(figure);
+                        const focus = FocusOffsetZero(p_node);
                         document.getSelection().collapse(focus.node, focus.offset);
                     }else{
-                        console.error("math.previousSibling cannot has focus",math.previousSibling);
-                    }    
-                }                   
+                        if(figure.previousSibling){
+                            const focus = FocusOffsetLast(figure.previousSibling);
+                            if(focus){ 
+                                if(focus.node.nodeType === Node.TEXT_NODE){
+                                    if(focus.node.data == nt_ZWBR){
+                                        focus.offset = 0;
+                                    }
+                                }                        
+                                document.getSelection().collapse(focus.node, focus.offset);
+                            }else{
+                                console.error("math.previousSibling cannot has focus",math.previousSibling);
+                            }
+                        }else{
+                            undo_man.Begin(node, offset);
+                            const p_node = AddNode("P", figure.parentNode, figure);
+                            AddNode("BR", p_node, null);
+                            undo_man.End(p_node, 0);
+                            document.getSelection().collapse(p_node, 0);
+                        }
+                    }
 
+                }else{
+                    
+                    const res = DisableEdit(math);
+                    if(res.removed){
+                        document.getSelection().collapse(res.focus.node, res.focus.offset);
+                    }else{
+                        const focus = FocusOffsetLast(math.previousSibling);
+                        if(focus){ 
+                            if(focus.node.nodeType === Node.TEXT_NODE){
+                                if(focus.node.data == nt_ZWBR){
+                                    focus.offset = 0;
+                                }
+                            }                        
+                            document.getSelection().collapse(focus.node, focus.offset);
+                        }else{
+                            console.error("math.previousSibling cannot has focus",math.previousSibling);
+                        }    
+                    }                   
+                }
                 return true;
             }
             
@@ -3398,7 +3432,13 @@ function ConvertPtoFigure(p_node){
         i_end = i_end.nextSibling;
     }
     const fragment = RemoveNodeList(p_node, p_node.firstChild, i_end);//not to need safe operation because this p_nde will be removed//
-    SafePushNodeList(figure, fragment);
+    AddNodeList(figure, null, fragment);
+    if(figure.firstChild.nodeType==Node.TEXT_NODE){
+        RemoveNode(figure.firstChild);
+    }
+    if(figure.lastChild.nodeType==Node.TEXT_NODE){
+        RemoveNode(figure.lastChild);
+    }
 
     const figcaption = AddNode("FIGCAPTION", figure, null);
     if(p_node.firstChild){
