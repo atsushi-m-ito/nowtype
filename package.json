@@ -1,11 +1,11 @@
 {
   "name": "nowtype",
-  "version": "0.3.16",
+  "version": "0.3.17",
   "description": "NowType is a markdown editor",
   "main": "ele.main.js",
   "dependencies": {},
   "devDependencies": {
-    "electron": "^8.1.1",
+    "electron": "^8.2.1",
     "electron-builder": "^22.4.1",
     "node-minify": "^3.6.0"
   },
@@ -21,6 +21,7 @@
   "author": "Atsushi M. Ito",
   "license": "MIT",
   "build": {
+    "artifactName": "${productName}_setup_${version}_${os}.${ext}",
     "win": {
       "icon": "./icon.png",
       "target": "nsis"
