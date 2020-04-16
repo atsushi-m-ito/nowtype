@@ -263,10 +263,12 @@
 
     //Menu: File: Print to PDF//
     window.api.on("pdf_begin", () => {        
+        document.getElementById("render_div").blur();
         document.getElementById("pdfbar").classList.add("pdfwait");        
     });
     window.api.on("pdf_end", () => {        
-        document.getElementById("pdfbar").classList.remove("pdfwait");        
+        document.getElementById("pdfbar").classList.remove("pdfwait");
+        document.getElementById("render_div").focus();      
     });
 
     window.onload=(event)=>{

@@ -1,13 +1,14 @@
 {
   "name": "nowtype",
-  "version": "0.3.17",
+  "version": "0.3.21",
   "description": "NowType is a markdown editor",
   "main": "ele.main.js",
   "dependencies": {},
   "devDependencies": {
-    "electron": "^8.2.1",
+    "electron": "^8.2.2",
     "electron-builder": "^22.4.1",
-    "node-minify": "^3.6.0"
+    "node-minify": "^3.6.0",
+    "terser": "^4.6.11"
   },
   "scripts": {
     "electron-version": "electron -v",
@@ -16,7 +17,8 @@
     "build": "electron-builder -w --x64",
     "build-portable": "electron-builder -w portable --x64",
     "build-mac": "electron-builder -m",
-    "minify": "node-minify --compressor uglify-es --input ./src/nt.*.js --output ./nowtype.min.js"
+    "minify_old": "node-minify --compressor uglify-es --input ./src/nt.*.js --output ./nowtype.min.js  ",
+    "minify": "terser -o nowtype.min.js -c drop_console=true ./src/nt.*.js"
   },
   "author": "Atsushi M. Ito",
   "license": "MIT",

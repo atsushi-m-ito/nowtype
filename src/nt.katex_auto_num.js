@@ -52,7 +52,10 @@ function katexAutoNumber_woAligned(mathtext, parent, number){
     mathtext = ReferLabelEqnumber(mathtext);
 
     
-    parent.insertAdjacentHTML('afterbegin', katex.renderToString(mathtext, {output: "html", displayMode: true, throwOnError: false }));
+    //parent.insertAdjacentHTML('afterbegin', katex.renderToString(mathtext, {output: "html", displayMode: true, throwOnError: false }));
+    const fragment = new DocumentFragment();
+    katex.render(mathtext, fragment, {output: "html", displayMode: true, throwOnError: false });
+    parent.insertBefore(fragment, parent.firstElementChild);
 
     let katex_html = FindFirstChild("katex-html",parent.firstElementChild );
     if(katex_html === null) return 0;        
@@ -138,8 +141,11 @@ function katexAutoNumber_withAligned(mathtext, pos_begin, parent, number){
 
         // rendering and hack to give expression number per line.
         mathtext = "\\tag{" + number + "}" + mathtext;
-        parent.insertAdjacentHTML('afterbegin', katex.renderToString(mathtext, {output: "html", displayMode: true, throwOnError: false }));
-
+        //parent.insertAdjacentHTML('afterbegin', katex.renderToString(mathtext, {output: "html", displayMode: true, throwOnError: false }));
+        const fragment = new DocumentFragment();
+        katex.render(mathtext, fragment, {output: "html", displayMode: true, throwOnError: false });
+        parent.insertBefore(fragment, parent.firstElementChild);
+    
         let katex_html = FindFirstChild("katex-html",parent.firstElementChild );
         if(katex_html === null) return 0;        
         

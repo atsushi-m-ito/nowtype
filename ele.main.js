@@ -12,7 +12,7 @@ let is_close_after_save = false;
 let context_menu = null;
 
 const CreateWindow = () => {
-    // mainWindowを作成（windowの大きさや、Kioskモードにするかどうかなどもここで定義できる）
+    
     mainWindow = new BrowserWindow({width: 1024, height: 768, 
         webPreferences: {
             nodeIntegration: false,
@@ -536,16 +536,19 @@ ipcMain.on("zoom", async (event, arg) => {
 
 
 async function MenuPrint(browserWindow){
-        
+    browserWindow.blur();
     const wc = browserWindow.webContents;
-    
+
     wc.print({margins:{marginType: "default"/*,marginsType: "custom",top: 0,bottom: 0,left: 0, right: 0*/}}, (success, error) => {
         if(success){
             console.log('Print successfully.');
         }else{
             console.log(error);
         }
+        browserWindow.focus();
     });
+
+    
 }
 
 
@@ -560,19 +563,21 @@ async function MenuPrintToPDF(browserWindow){
             ]
         }  );
     if(!result.canceled){
-            
+        browserWindow.blur();
         const wc = browserWindow.webContents;
         
-        wc.send("pdf_begin");    
+        wc.send("pdf_begin");
         
         wc.printToPDF({pageSize:"A4", marginsType:0}).then(data => {
             fs.writeFile(result.filePath, data, (error) => {
             if (error) throw error;
             console.log('Write PDF successfully.');
+            browserWindow.focus();
             wc.send("pdf_end");
             })
         }).catch(error => {
             console.log(error);
+            browserWindow.focus();
             wc.send("pdf_end");
         });
     }

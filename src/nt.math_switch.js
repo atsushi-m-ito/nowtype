@@ -51,8 +51,14 @@ function OnClickMath(event){
         const math_class = focus_math.lastChild.className;
         if(["editmath","editmathdisp","editimg"].includes(math_class)){
             DisableEdit(g_editable_math, false);
-            const math_text = EnableMathEdit(focus_math, 1);
-            document.getSelection().collapse(math_text.node, math_text.offset);
+            if(event.shiftKey){
+                const parent = focus_math.parentNode;
+                const offset = GetIndex(parent, focus_math);
+                document.getSelection().setBaseAndExtent(parent, offset, parent, offset+1);
+            }else{
+                const math_text = EnableMathEdit(focus_math, 1);
+                document.getSelection().collapse(math_text.node, math_text.offset);
+            }
         }else{
             let focus_offset = document.getSelection().focusOffset;            
             let anchor_offset = (document.getSelection().anchorNode === document.getSelection().focusNode) ? document.getSelection().anchorOffset : focus_offset;
@@ -172,7 +178,7 @@ function SetFocusByCoordinate(target_text_node, margin, x, y){
 function EnableMathEdit(math, offset = 1){
     if(math===null) return null;
     if((math.className!=="math")) return null;
-
+    
     HidePreview(math.firstChild);
     UnsetHide(math.lastChild);
     g_editable_math = math;
@@ -272,6 +278,10 @@ function DisableEdit(math, in_undo_redo = false){
             {
                 MathRendering(math, mathtext, -1);
                 ShowPreviewDisplay(math.firstChild);
+                
+                const rect = math.firstChild.getBoundingClientRect();
+                math.firstChild.style.width = String(rect.width) + "px";
+                math.firstChild.style.height = String(rect.height) + "px";
             }
             break;
         case "editcode":
@@ -340,7 +350,7 @@ function DisableEdit(math, in_undo_redo = false){
             }
             break;
     }
-
+                
     SetHide(math.lastChild);
     g_editable_math = null;
 
@@ -365,6 +375,7 @@ function MathRendering(math, mathtext, number){
 
     let edit_node = math.lastChild;
 
+    let delta = 0;
 
     //re-rendering
     if(edit_node.className==="editmath"){
@@ -373,32 +384,41 @@ function MathRendering(math, mathtext, number){
         let ref_mathtext = ReferLabelEqnumber(mathtext);
 
         math.firstChild.remove();
-        math.insertAdjacentHTML('afterbegin', katex.renderToString(ref_mathtext, {output: "html", displayMode: false, throwOnError: false })); 
-        
+        //math.insertAdjacentHTML('afterbegin', katex.renderToString(ref_mathtext, {output: "html", displayMode: false, throwOnError: false })); 
+        const fragment = new DocumentFragment();
+        katex.render(ref_mathtext,fragment, {output: "html", displayMode: false, throwOnError: false }); 
+        math.insertBefore(fragment, math.firstChild);
+        math.firstChild.contentEditable=false;
     }else if(edit_node.className==="editmathdisp"){
 
         if(number===0){
             math.firstChild.remove();
             const re_mathtext = ReplaceAll(mathtext, "{align}", "{aligned}");
-            math.insertAdjacentHTML('afterbegin', katex.renderToString(re_mathtext, {output: "html", displayMode: true, throwOnError: false }));
+            //math.insertAdjacentHTML('afterbegin', katex.renderToString(re_mathtext, {output: "html", displayMode: true, throwOnError: false }));
+            const fragment = new DocumentFragment();
+            katex.render(re_mathtext,fragment, {output: "html", displayMode: true, throwOnError: false }); 
+            math.insertBefore(fragment, math.firstChild);
             
         }else{
             if(number < 0){
                 number = parseInt(math.dataset.eqnumberBegin, 10);
             }
             math.firstChild.remove();            
-            let delta = katexAutoNumber(mathtext, math, number);
+            delta = katexAutoNumber(mathtext, math, number);
             math.dataset.eqnumberBegin = number;
             math.dataset.eqnumberEnd = number + delta;
-            return delta;
+            
         }
+                        
+        math.firstChild.contentEditable=false;
+        
     }else{
         alert("invalid math editting");
     }
 
     //math.firstChild.contentEditable="false";// if this becomes valid, the math preview sannot be selected char by char, but except for firefox //
 
-    return 0;
+    return delta;
 }
 
         
@@ -427,11 +447,13 @@ function MathRendering(math, mathtext, number){
         */
        
 function SetHide(node) {
-    //node.style.cssText = "border: 0; clip: rect(0 0 0 0); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; white-space: nowrap; width: 1px;";
+    
+    //node.style.display="none";
     node.style.cssText = "border: 0; clip: rect(0 0 0 0); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; white-space: nowrap; width: 1px;";
 }
 function UnsetHide(node) {
-    //node.style.cssText = "clip: auto; height: auto; margin: 0; overflow: visible; position: static; white-space: normal; width: auto;";
+    
+    //node.style.display="inline";
     node.style.cssText = "clip: auto; height: auto; margin: 0; overflow: visible; position: static; width: auto;";
 }
 
@@ -471,4 +493,58 @@ function IsTextNodeInMath(node){
     if(node.parentNode===null)return false;
     if(node.parentNode.parentNode===null)return false;
     return (node.parentNode.parentNode.className==="math");
+}
+
+
+function QuickRedrawMath(render_div){
+    /*
+    Rendering(DOM generation) with Katex,
+    Caret movement becomes slow when data is large.
+    This is caused by the large size of DOM.
+    Probably, this is not problem in rendering, 
+    this is problem of the calculation of caret position coordinate in big DOM.
+    To solve this problem, 
+    To avoid this problem, 
+    Katex span elements out of window should be set to be not displayed.
+    That is, style "display: none" is set.
+    And, to keep layout (position) of the other elements,
+    wrapper span tag has style "width: X.XXXpx; height: Y.YYYpx", 
+    where the width and height is obtained by using get BoundingClientRect.
+    This problem occurs especually in Chrome.
+    */
+
+    let matches = render_div.querySelectorAll('span.editmathdisp');
+    const whole_height = document.documentElement.clientHeight;
+    console.log("scroll/resize",matches.length);
+
+    for (let i=0; i<matches.length; i++) {
+        const editmath = matches[i];
+        const math = editmath.parentNode;        
+        const katexdisp = math.firstChild;
+        const katex = katexdisp.firstChild;
+        
+        const rect = katexdisp.getBoundingClientRect();
+        
+        if(katex.style.display == "none"){
+            if((rect.bottom > 0.0) && (rect.top < whole_height)){
+                if(math !==g_editable_math)
+                {
+                    katex.style.display = null;                    
+                }
+            }
+        }else{
+            if((rect.bottom < 0.0) || (rect.top > whole_height)){
+            
+                if(katexdisp.style.length <= 1){
+                    if(rect.height>=1.0){
+                        katexdisp.style.width =String(rect.width) + "px";
+                        katexdisp.style.height=String(rect.height) + "px";
+                    }
+                }
+                katex.style.display = "none";
+            }            
+        }
+        
+        
+    }
 }

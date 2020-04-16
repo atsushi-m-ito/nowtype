@@ -29,9 +29,12 @@ function InitializeMathInFragment(fragment, number){
             break;
         case "editmathdisp":
             {
+                
                 const delta = MathRendering(math, mathtext, number);
                 number += delta;
-                ShowPreviewDisplay(math.firstChild);                
+                ShowPreviewDisplay(math.firstChild);    
+                  
+                
             }
             break;
         case "editcode":

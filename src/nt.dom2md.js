@@ -113,36 +113,27 @@ function MdFromNode(node, list_rank){
         return "\n" + text;
     }
     case "SPAN":{
-        if(node.className==="math"){    
+        if(node.className=="math"){    
             switch(node.lastChild.className){
             case "editmathdisp":
             case "editcodedisp":
             {
                 let math_text = node.lastChild.firstChild.data;
                 if(list_rank > 0){
-                    return "\n\n" + math_text + "\n";
-                    /*
-                    const head_space = nt_SPACE_FOR_LIST.repeat(list_rank);
-                    math_text = "\n\n" + head_space + ReplaceAll(math_text, "\n", "\n" + head_space)  + "\n\n";
-                    if(node.nextSibling){
-                        if(node.nextSibling.nodeType===Node.TEXT_NODE){
-                            if(node.nextSibling.data == nt_ZWBR){
-                                if(node.nextSibling.nodeName=="SPAN"){
-                                    return math_text + head_space;
-                                }
-                            }else{
-                                return math_text + head_space;
+                    return "\n\n" + math_text + "\n";                    
+                }else{
+                    if(node.previousSibling){
+                        if(node.previousSibling.className=="math"){
+                            const math_class = node.previousSibling.lastChild.className;
+                            if((math_class == "editmathdisp") || (math_class == "editcodedisp")){
+                                return math_text + "\n";
                             }
-                        }else if(node.nextSibling.nodeName=="SPAN"){
-                            return math_text + head_space;
                         }
-                    }
-                    
-                    return math_text;
-                    */
+                        return "\n" + math_text + "\n";
+                    }else{
+                        return math_text + "\n";
+                    }                    
                 }
-
-                return math_text + "\n";
             }
             
             case "editimg":

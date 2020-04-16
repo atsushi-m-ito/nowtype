@@ -10,11 +10,10 @@ div#paper {
     padding-bottom: 25mm;
     
     /* user settings */
-    background: #003030;
-    color: white;
     font-size: 11pt;
     font-family: "BIZ UDPGothic","MS PGothic","YuGothic",Helvetica,Arial,sans-serif;
-    
+    background: #003030;
+    color: white;    
 }
     
 div#render_div{ 
@@ -23,6 +22,7 @@ div#render_div{
     margin-left: auto;
     margin-right: auto;
     border: dotted  1px;
+    outline: none;    /* this is necessary to prevent that the border added by browser when element get the focus */
     white-space: pre-wrap;
 }
 

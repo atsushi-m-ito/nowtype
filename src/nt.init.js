@@ -146,7 +146,8 @@ function NT_Initialize(target_div_id, ime_type) {
     render_div.addEventListener("paste", OnPaste, false);
     //render_div.addEventListener("click", OnClickMath, false);
     document.addEventListener("click", OnClickMath, false);   //document is necessary to handle mouseup at the out of windows//
-    
+    render_div.parentNode.parentNode.addEventListener("scroll", OnScroll, {passive: true});
+    window.addEventListener("resize", OnScroll, {passive: true});
     //undo/redo is not the event supported by browser//
     
     //undo_man 
@@ -202,4 +203,15 @@ function SAFARI_OnKeydownForNavigationEditing(event){
 
 function NT_ResetChangeFlag(){
     undo_man.GetChangeEventDispatcher().Reset();
+}
+
+let nt_scroll_ticking = false;
+function OnScroll(event){
+    if(!nt_scroll_ticking){
+        window.requestAnimationFrame(()=>{
+            QuickRedrawMath(nt_render_div);
+            nt_scroll_ticking = false;
+        });
+        nt_scroll_ticking = true;
+    }
 }

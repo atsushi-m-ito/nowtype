@@ -103,6 +103,9 @@ function OnKeydownForNavigationEditing(event) {
                 }else{                    
                     event.preventDefault();
                 }
+                if(selection.focusNode){
+                    selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
+                }
             }
             break;
         case "Delete":
@@ -117,6 +120,9 @@ function OnKeydownForNavigationEditing(event) {
                 }else{                    
                     CutSelection(event.currentTarget, selection);
                 }
+                if(selection.focusNode){
+                    selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
+                }
             }
             break;
         case "Backspace":
@@ -130,6 +136,9 @@ function OnKeydownForNavigationEditing(event) {
                     SwitchInputBackspace(node, offset, event.getModifierState("Shift"));
                 } else{
                     CutSelection(event.currentTarget, selection);
+                }
+                if(selection.focusNode){
+                    selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
                 }
 
             }
