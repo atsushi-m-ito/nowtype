@@ -20,7 +20,7 @@
 <div id="backbox"><div id="paper"><div id="render_div" spellcheck="false"></div></div></div>
 
 <div id="savebar" class="savebar"><br/></div>
-<div id="pdfbar" class="pdfbar">Creating PDF</div>
+<div id="infobar" class="infobar">now printing</div>
 <div id="modal1" class="modal1" >
     <div id="modalclose" class="close" >CLOSE</div>
     <div class="modaltext" ></div>
@@ -262,13 +262,16 @@
     });
 
     //Menu: File: Print to PDF//
-    window.api.on("pdf_begin", () => {        
-        document.getElementById("render_div").blur();
-        document.getElementById("pdfbar").classList.add("pdfwait");        
+    window.api.on("print_begin", (arg) => {        
+        //document.getElementById("render_div").blur();
+        NT_BeginPrint();
+        document.getElementById("infobar").classList.add("pdfwait");
+        window.api.send("print_ready", arg);
     });
-    window.api.on("pdf_end", () => {        
-        document.getElementById("pdfbar").classList.remove("pdfwait");
-        document.getElementById("render_div").focus();      
+    window.api.on("print_end", () => {        
+        NT_EndPrint();
+        document.getElementById("infobar").classList.remove("pdfwait");
+        //document.getElementById("render_div").focus();
     });
 
     window.onload=(event)=>{

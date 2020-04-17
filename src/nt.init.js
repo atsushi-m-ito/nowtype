@@ -215,3 +215,24 @@ function OnScroll(event){
         nt_scroll_ticking = true;
     }
 }
+
+let nt_focus_print = null;
+function NT_BeginPrint(){
+    if(g_editable_math){
+        DisableEdit(g_editable_math);
+    }
+    const selection = document.getSelection();
+    nt_focus_print = {anchorNode:selection.anchorNode,anchorOffset:selection.anchorOffset,
+        focusNode:selection.focusNode,focusOffset:selection.focusOffset}
+    FullRedrawMath(nt_render_div);
+    nt_render_div.contentEditable="false";
+}
+
+function NT_EndPrint(){
+    nt_render_div.contentEditable="true";
+    QuickRedrawMath(nt_render_div);
+    
+    document.getSelection().setBaseAndExtent(nt_focus_print.anchorNode,nt_focus_print.anchorOffset,
+        nt_focus_print.focusNode, nt_focus_print.focusOffset);
+    
+}

@@ -548,3 +548,26 @@ function QuickRedrawMath(render_div){
         
     }
 }
+
+
+function FullRedrawMath(render_div){
+    /*
+        Redraw all math.
+        Purpose is to make visible all math before print, 
+        because displayed math is invisible for performance of movement of caret by using QuickRedrawMath().
+    */
+    
+    let matches = render_div.querySelectorAll('span.editmathdisp');
+    const whole_height = document.documentElement.clientHeight;
+    console.log("all displayed math are visible",matches.length);
+
+    for (let i=0; i<matches.length; i++) {
+        const editmath = matches[i];
+        const math = editmath.parentNode;        
+        const katexdisp = math.firstChild;
+        const katex = katexdisp.firstChild;
+        
+        katex.style.display = null;
+        
+    }
+}

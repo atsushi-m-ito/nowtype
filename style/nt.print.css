@@ -28,8 +28,8 @@
 @media print{
     #toolbar{ display: none;}
     #savebar{ display: none;}
-    #pdfbar{ display: none;}
-    .pdfwait{display: none;}
+    #infobar{ display: none;}
+    .pdfwait{ display: none;}
 
     body{
         /*width:100%;*/

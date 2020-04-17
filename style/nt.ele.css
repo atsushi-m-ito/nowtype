@@ -67,7 +67,7 @@ div.close{
 }
 
 
-.pdfbar{
+.infobar{
     position: fixed; bottom: 0px; left: 0px; margin: auto; z-index: 9998; background: #ffcc44; text-align:left;
     transition: all 300ms 0s ease;
     display: none;

@@ -122,13 +122,13 @@ function createMenu() {
                 {
                     label: 'Print ..',
                     click: (menuItem, browserWindow, event) => {
-                        MenuPrint(browserWindow);
+                        MenuPrint(browserWindow, "printer");
                     }
                 },
                 {
                     label: 'Print to PDF..',
                     click: (menuItem, browserWindow, event) => {
-                        MenuPrintToPDF(browserWindow);
+                        MenuPrint(browserWindow,"pdf");
                     }
                 }
             ]
@@ -535,55 +535,54 @@ ipcMain.on("zoom", async (event, arg) => {
 
 
 
-async function MenuPrint(browserWindow){
-    browserWindow.blur();
+async function MenuPrint(browserWindow, device){
+    
     const wc = browserWindow.webContents;
-
-    wc.print({margins:{marginType: "default"/*,marginsType: "custom",top: 0,bottom: 0,left: 0, right: 0*/}}, (success, error) => {
-        if(success){
-            console.log('Print successfully.');
-        }else{
-            console.log(error);
-        }
-        browserWindow.focus();
-    });
-
-    
+    wc.send("print_begin", device);
 }
 
 
-async function MenuPrintToPDF(browserWindow){
-    const result = await dialog.showSaveDialog(browserWindow, 
-        {
-            filters: [
-                {
-                    name: 'PDF',
-                    extensions: ['pdf']
-                }
-            ]
-        }  );
-    if(!result.canceled){
-        browserWindow.blur();
-        const wc = browserWindow.webContents;
-        
-        wc.send("pdf_begin");
-        
-        wc.printToPDF({pageSize:"A4", marginsType:0}).then(data => {
-            fs.writeFile(result.filePath, data, (error) => {
-            if (error) throw error;
-            console.log('Write PDF successfully.');
-            browserWindow.focus();
-            wc.send("pdf_end");
-            })
-        }).catch(error => {
-            console.log(error);
-            browserWindow.focus();
-            wc.send("pdf_end");
+ipcMain.on("print_ready", async (event, device) => {
+    if(device=="printer"){
+        const wc = mainWindow.webContents;
+        wc.print({margins:{marginType: "default"/*,marginsType: "custom",top: 0,bottom: 0,left: 0, right: 0*/}}, (success, error) => {
+            if(success){
+                console.log('Print successfully.');
+            }else{
+                console.log(error);
+            }
+            
+            wc.send("print_end");
         });
-    }
+    }else if(device=="pdf"){
+        const wc = mainWindow.webContents;
+        const result = await dialog.showSaveDialog(mainWindow, 
+            {
+                filters: [
+                    {
+                        name: 'PDF',
+                        extensions: ['pdf']
+                    }
+                ]
+            }  );
+        if(result.canceled){
+            wc.send("print_end");
+        }else{
+            wc.printToPDF({pageSize:"A4", marginsType:0}).then(data => {
+                fs.writeFile(result.filePath, data, (error) => {
+                if (error) throw error;
+                console.log('Write PDF successfully.');                
+                wc.send("print_end");
+                })
+            }).catch(error => {
+                console.log(error);
+                wc.send("print_end");
+            });  
+        }            
 
-    
-}
+    }
+});
+
 
 
 ipcMain.on("showcontextmenu", (event)=>{
