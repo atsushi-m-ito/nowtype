@@ -22,8 +22,9 @@
 <div id="savebar" class="savebar"><br/></div>
 <div id="infobar" class="infobar">now printing</div>
 <div id="modal1" class="modal1" >
-    <div id="modalclose" class="close" >CLOSE</div>
-    <div class="modaltext" ></div>
+    <button id="modalclose" class="modalbutton" >Close</button>
+    <button id="modalcopy" class="modalbutton" >Copy</button>
+    <div id="modaltext" class="modaltext"><textarea></textarea></div>
 </div>    
 </body>
 
@@ -71,26 +72,46 @@
 
 
 
-        function CloseModal(event){
-            const modal = event.target.parentNode;
-            modal.style.display='none';
-        }
         
         function ShowHTML(a, b) {
             const main = document.getElementById(a);
             const modal = document.getElementById(b);
-            const modal_text = modal.getElementsByClassName("modaltext");
-            modal_text[0].textContent = main.outerHTML;
+            const modal_text = document.getElementById("modaltext");
+            modal_text.firstElementChild.value = main.outerHTML;
             modal.style.display = "block";
         }
 
         function ShowMarkdown(b) {
             const modal = document.getElementById(b);
-            const modal_text = modal.getElementsByClassName("modaltext");
-            modal_text[0].textContent = NT_GetMarkdown();
+            const modal_text = document.getElementById("modaltext");
+            modal_text.firstElementChild.value = NT_GetMarkdown();
             modal.style.display = "block";
         }
-
+        
+        function ShowTeX(b) {
+            const modal = document.getElementById(b);
+            const modal_text = document.getElementById("modaltext");
+            modal_text.firstElementChild.value = NT_GetTeX();
+            modal.style.display = "block";
+        }
+        
+        function CloseModal(event){
+            const modal = event.target.parentNode;
+            modal.style.display='none';
+        }
+        
+        function CopyModal(event){
+            const modal = event.target.parentNode;
+            const modal_text = document.getElementById("modaltext");
+            const textarea = modal_text.firstElementChild;
+            if(textarea.selectionStart == textarea.selectionEnd){
+                //select all text if any text is not selected//
+                modal_text.firstElementChild.select();
+            }
+            document.execCommand("copy");
+            textarea.focus();
+        }
+        
         
 
 
@@ -114,6 +135,7 @@
     <script src="./src/nt.str_replace.js"></script>
     <script src="./src/nt.md2dom.js"></script>
     <script src="./src/nt.dom2md.js"></script>
+    <script src="./src/nt.dom2tex.js"></script>
     <script src="./src/nt.init.js"></script>
     <script src="./src/nt.load_save.js"></script>
     <script src="./src/nt.dispatch.js"></script>
@@ -173,13 +195,14 @@
     //Menu: File: Save//
     window.api.on("save_file", () => {
         
-        console.log("fromMain, save_file");
+        console.log("fromMain, save ");
         const md_text = NT_GetMarkdown();
 
         window.api.send("save_file_to_main", 
             {
                 filepath: ele_nt_filepath,
-                markdown: md_text
+                markdown: md_text,
+                extension: "md"
             }
         );
 
@@ -190,15 +213,21 @@
     });
     
     //Menu: File: Save As//
-    window.api.on("save_as", () => {
+    window.api.on("save_as", (extension) => {
         
-        console.log("fromMain, save_as");
-        const md_text = NT_GetMarkdown();
-
+        
+        const md_text = (extension == "md") ? NT_GetMarkdown() 
+            : (extension == "tex") ? NT_GetTeX() 
+            /*: (extension == "html") ? document.getElementById("render_div").innerHTML*/
+            : null;
+        if(md_text==null) return;
+        console.log("fromMain, save_as ", extension);
+        
         window.api.send("save_file_to_main", 
             {
                 filepath: null,
-                markdown: md_text
+                markdown: md_text,
+                extension: extension
             }
         );
     });
@@ -212,6 +241,7 @@
 
     //Menu: File: Save &Save As, catch file path if new file is created//
     window.api.on("file_path", (arg) => {        
+        if(arg.extension != "md") return;
         ele_nt_filepath = arg.filepath;
 
         NT_ResetChangeFlag();
@@ -260,6 +290,11 @@
     window.api.on("showhtml", () => {        
         ShowHTML('render_div','modal1');
     });
+    
+    //Menu: View: Show HTML//
+    window.api.on("showtex", () => {        
+        ShowTeX('modal1');
+    });
 
     //Menu: File: Print to PDF//
     window.api.on("print_begin", (arg) => {        
@@ -301,6 +336,7 @@
 
         
         document.getElementById("modalclose").addEventListener("click", CloseModal, false);
+        document.getElementById("modalcopy").addEventListener("click", CopyModal, false);
 
         
         document.getElementById("backbox").addEventListener("wheel", OnWheel, false);

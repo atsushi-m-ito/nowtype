@@ -24,7 +24,7 @@ contextBridge.exposeInMainWorld(
             }
         },
         on: (channel, func) => {
-            const valid_channels = ["open_file", "save_file","save_as","file_path","undo","redo","selectall","print_begin","print_end","showmarkdown","showhtml","changecss","mathnumbering","spellcheck"];
+            const valid_channels = ["open_file", "save_file","save_as","file_path","undo","redo","selectall","print_begin","print_end","showmarkdown","showhtml","showtex","changecss","mathnumbering","spellcheck"];
             if (valid_channels.includes(channel)) {
                 console.log("catch: ", channel);
                 

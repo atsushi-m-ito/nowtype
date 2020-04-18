@@ -114,7 +114,7 @@ function createMenu() {
                     label: 'Save As..',
                     click: (menuItem, browserWindow, event) => { 
                         if(! event.triggeredByAccelerator){
-                            SaveAs(); 
+                            SaveAs("md"); 
                         }
                     } // 
                 },
@@ -130,6 +130,29 @@ function createMenu() {
                     click: (menuItem, browserWindow, event) => {
                         MenuPrint(browserWindow,"pdf");
                     }
+                },
+                {type: 'separator'},
+                {
+                    label: 'Export HTML',
+                    enabled: false/*,
+                    click: (menuItem, browserWindow, event) => {
+                        if(! event.triggeredByAccelerator){
+                            SaveAs("html"); 
+                        }
+                    }*/
+                },
+                {
+                    label: 'Export LaTex',
+                    click: (menuItem, browserWindow, event) => {
+                        if(! event.triggeredByAccelerator){
+                            SaveAs("tex"); 
+                        }
+                    }
+                },
+                {type: 'separator'},
+                {
+                    label: 'Quit',
+                    role: 'quit'
                 }
             ]
         },
@@ -245,14 +268,18 @@ function createMenu() {
                     click: (menuItem, browserWindow, event) => { 
                         MenuSimpleSend("showmarkdown");
                     }
-
                 },
                 {
                     label: 'Show HTML',                    
                     click: (menuItem, browserWindow, event) => { 
                         MenuSimpleSend("showhtml");
                     }
-
+                },
+                {
+                    label: 'Show TeX',
+                    click: (menuItem, browserWindow, event) => { 
+                        MenuSimpleSend("showtex");
+                    }
                 }
             ]
         },
@@ -415,13 +442,13 @@ function SaveFile(){
     mainWindow.webContents.send("save_file");    
 }
 
-function SaveAs(){
-    mainWindow.webContents.send("save_as");    
+function SaveAs(extension){
+    mainWindow.webContents.send("save_as",extension);
 }
 
 ipcMain.on("save_file_to_main", async (event, arg) => {
     console.log("save: path = ", arg.filepath); // prints "ping"
-    console.log("markdown = ", arg.markdown.slice(0,10), " ... ", arg.markdown.slice(arg.markdown.length-10)); // prints "ping"
+    console.log("data = ", arg.markdown.slice(0,10), " ... ", arg.markdown.slice(arg.markdown.length-10)); // prints "ping"
 
     if(fs.existsSync(arg.filepath)){
         console.log("save: onto the file existing");
@@ -440,9 +467,25 @@ ipcMain.on("save_file_to_main", async (event, arg) => {
         const result = await dialog.showSaveDialog(mainWindow, 
             {
                 filters: [
+                    (arg.extension == 'md') ? 
                     {
                         name: 'Markdown',
                         extensions: ['md']
+                    }
+                    : (arg.extension == 'tex') ? 
+                    {
+                        name: 'TeX',
+                        extensions: ['tex']
+                    }
+                    : (arg.extension == 'html') ? 
+                    {
+                        name: 'HTML',
+                        extensions: ['html']
+                    }
+                    :
+                    {
+                        name: 'all',
+                        extensions: ['*']
                     }
                 ]
             }  );
@@ -461,7 +504,8 @@ ipcMain.on("save_file_to_main", async (event, arg) => {
             //rendererにファイル名を返す//
             mainWindow.webContents.send("file_path", 
                 {
-                    filepath: result.filePath
+                    filepath: result.filePath,
+                    extension: arg.extension
                 }
             ); 
         }

@@ -32,6 +32,10 @@ function NT_GetMarkdown(){
     return DOM2MD(nt_render_div);     
 }
 
+function NT_GetTeX(){
+    return DOM2TEX(nt_render_div);     
+}
+
 let nt_file_dir = "";
 function NT_SetFilePath(path){
     
