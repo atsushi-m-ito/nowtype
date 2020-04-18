@@ -23,7 +23,7 @@
 <div id="toolbar" style="position: fixed; top: 0px; left: 0px; margin: 0; width: 100%; height: 32px; background: #c0dcff">
     <!--<div class="logo">Now Type</div>-->
     <img src="./favicon.ico" width="32px" height="32px" style="display:inline;margin: 0px; padding: 0px; vertical-align: middle;" />
-    <div class="version">ver. 0.3.22 (Web)</div>
+    <div class="version">ver. 0.3.23 (Web)</div>
     <input type="file" id="file_open" />
     <button type="button" class="intLink" name="save" onclick="TestSave();">Save (DL)</button>
     
@@ -35,11 +35,13 @@
     
     <button type="button" class="intLink" name="ShowHTML" onclick="ShowHTML('render_div','modal1');">Show HTML</button>
     <button type="button" class="intLink" name="ShowMD" onclick="ShowMarkdown('modal1');">Show Markdown</button>
+    <button type="button" class="intLink" name="ShowTeX" onclick="ShowTeX('modal1');">Show LaTeX</button>
     
 </div>
 <div id="modal1" class="modal1" >
-    <div id="modalclose" class="close" >CLOSE</div>
-    <div class="modaltext" ></div>
+    <button id="modalclose" class="modalbutton" >Close</button>
+    <button id="modalcopy" class="modalbutton" >Copy</button>
+    <div id="modaltext" class="modaltext"><textarea></textarea></div>
 </div>    
 <div id="backbox" ><div id="paper"><div id="render_div" ></div></div></div>
 </body>
@@ -77,6 +79,7 @@
 
         
         document.getElementById("modalclose").addEventListener("click", CloseModal, false);
+        document.getElementById("modalcopy").addEventListener("click", CopyModal, false);
     };
 
     
@@ -137,26 +140,45 @@
     }
 
 
-    function CloseModal(event){
-        const modal = event.target.parentNode;
-        modal.style.display='none';
-    }
     
     function ShowHTML(a, b) {
         const main = document.getElementById(a);
         const modal = document.getElementById(b);
-        const modal_text = modal.getElementsByClassName("modaltext");
-        modal_text[0].textContent = main.outerHTML;
+        const modal_text = document.getElementById("modaltext");
+        modal_text.firstElementChild.value = main.outerHTML;
         modal.style.display = "block";
     }
 
     function ShowMarkdown(b) {
         const modal = document.getElementById(b);
-        const modal_text = modal.getElementsByClassName("modaltext");
-        modal_text[0].textContent = NT_GetMarkdown();
+        const modal_text = document.getElementById("modaltext");
+        modal_text.firstElementChild.value = NT_GetMarkdown();
         modal.style.display = "block";
     }
-
+    function ShowTeX(b) {
+        const modal = document.getElementById(b);
+        const modal_text = document.getElementById("modaltext");
+        modal_text.firstElementChild.value = NT_GetTeX();
+        modal.style.display = "block";
+    }
+        
+    function CloseModal(event){
+        const modal = event.target.parentNode;
+        modal.style.display='none';
+    }
+    
+    function CopyModal(event){
+        const modal = event.target.parentNode;
+        const modal_text = document.getElementById("modaltext");
+        const textarea = modal_text.firstElementChild;
+        if(textarea.selectionStart == textarea.selectionEnd){
+            //select all text if any text is not selected//
+            modal_text.firstElementChild.select();
+        }
+        document.execCommand("copy");
+        textarea.focus();
+    }
+        
 
 </script>
 
