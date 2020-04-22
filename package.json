@@ -1,9 +1,8 @@
 {
   "name": "nowtype",
-  "version": "0.3.23",
+  "version": "0.3.25",
   "description": "NowType is a markdown editor",
   "main": "ele.main.js",
-  "dependencies": {},
   "devDependencies": {
     "electron": "^8.2.3",
     "electron-builder": "^22.5.1",
@@ -11,19 +10,22 @@
     "terser": "^4.6.11"
   },
   "scripts": {
-    "electron-version": "electron -v",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
     "build": "electron-builder -w --x64",
     "build-portable": "electron-builder -w portable --x64",
     "build-mac": "electron-builder -m",
+    "build-linux": "electron-builder -l deb rpm",
     "minify_old": "node-minify --compressor uglify-es --input ./src/nt.*.js --output ./nowtype.min.js  ",
     "minify": "terser -o nowtype.min.js -c drop_console=true ./src/nt.*.js"
   },
-  "author": "Atsushi M. Ito",
+  "author": {
+    "name":"Atsushi M. Ito", 
+    "email": "atsushi-m-ito@email.jp"
+  },
+  "homepage": "https://github.com/atsushi-m-ito/nowtype",
   "license": "MIT",
   "build": {
-    "artifactName": "${productName}_setup_${version}_${os}.${ext}",
+    "artifactName": "${productName}_setup_${version}_${os}.${ext}",    
     "win": {
       "icon": "./icon.png",
       "target": "nsis"
@@ -33,6 +35,9 @@
     },
     "mac": {
       "icon": "./icon.png"
+    },
+    "linux": {
+      "icon": "./icon.icns"
     }
   }
 }

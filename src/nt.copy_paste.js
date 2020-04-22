@@ -491,8 +491,10 @@ function ConnectionNodeRecursive(ref_node){
                 if((prev.lastChild.nodeName == "OL")||(prev.lastChild.nodeName == "UL")){
                     let latter_first_OL_UL = null;
                     if(ref_node.firstChild.nodeName=="BR"){
-                        if((ref_node.firstChild.nextSibling.nodeName=="OL")||(ref_node.firstChild.nextSibling.nodeName=="UL")){
-                            latter_first_OL_UL = ref_node.firstChild.nextSibling;
+                        if(ref_node.firstChild.nextSibling){
+                            if((ref_node.firstChild.nextSibling.nodeName=="OL")||(ref_node.firstChild.nextSibling.nodeName=="UL")){
+                                latter_first_OL_UL = ref_node.firstChild.nextSibling;
+                            }
                         }
                     }else if((ref_node.firstChild.nodeName=="OL")||(ref_node.firstChild.nodeName=="UL")){
                         latter_first_OL_UL = ref_node.firstChild;

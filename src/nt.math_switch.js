@@ -279,9 +279,13 @@ function DisableEdit(math, in_undo_redo = false){
                 MathRendering(math, mathtext, -1);
                 ShowPreviewDisplay(math.firstChild);
                 
-                const rect = math.firstChild.getBoundingClientRect();
-                math.firstChild.style.width = String(rect.width) + "px";
-                math.firstChild.style.height = String(rect.height) + "px";
+                /*
+                Node: getBoundingClientRect() should not be used
+                    because this return values are changed by zoom.
+                    On the other hand, clentWidth and clientHeight are indepenent of zoom
+                */
+                math.firstChild.style.width = String(math.firstChild.clientWidth) + "px";
+                math.firstChild.style.height = String(math.firstChild.clientHeight) + "px";
             }
             break;
         case "editcode":
@@ -500,6 +504,7 @@ function QuickRedrawMath(render_div){
     /*
     Rendering(DOM generation) with Katex,
     Caret movement becomes slow when data is large.
+    This problem occurs especually in Chrome.
     This is caused by the large size of DOM.
     Probably, this is not problem in rendering, 
     this is problem of the calculation of caret position coordinate in big DOM.
@@ -509,8 +514,13 @@ function QuickRedrawMath(render_div){
     That is, style "display: none" is set.
     And, to keep layout (position) of the other elements,
     wrapper span tag has style "width: X.XXXpx; height: Y.YYYpx", 
-    where the width and height is obtained by using get BoundingClientRect.
-    This problem occurs especually in Chrome.
+    where the width and height is obtained from clientWidth and clientHeight.
+    
+    Node: getBoundingClientRect() should not be used for get width and height
+        because this return values are changed by zoom, 
+        while clentWidth and clientHeight are indepenent of zoom
+        Therefore, the width and height to set style of math is obtained from clientWidth and clientHeight.
+        And, the check of region to inside/out of window is performed by using getBoundingClientRect() .               
     */
 
     let matches = render_div.querySelectorAll('span.editmathdisp');
@@ -536,9 +546,9 @@ function QuickRedrawMath(render_div){
             if((rect.bottom < 0.0) || (rect.top > whole_height)){
             
                 if(katexdisp.style.length <= 1){
-                    if(rect.height>=1.0){
-                        katexdisp.style.width =String(rect.width) + "px";
-                        katexdisp.style.height=String(rect.height) + "px";
+                    if(rect.height>0.0){
+                        katexdisp.style.width =String(katexdisp.clientWidth) + "px";
+                        katexdisp.style.height=String(katexdisp.clientHeight) + "px";
                     }
                 }
                 katex.style.display = "none";

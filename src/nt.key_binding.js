@@ -97,15 +97,17 @@ function OnKeydownForNavigationEditing(event) {
             {
                 console.log("keydown fook: " + event.key + "focus:" + offset);
                 
-                if (selection.isCollapsed) {                    
-                    event.preventDefault();
-                    SwitchInputEnter(node, offset, event.getModifierState("Shift"));
-                }else{                    
-                    event.preventDefault();
-                }
+                event.preventDefault();
                 if(selection.focusNode){
-                    selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
+                    if(selection.focusNode.scrollIntoView){
+                        selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
+                    }
                 }
+
+                if (selection.isCollapsed) {                    
+                    SwitchInputEnter(node, offset, event.getModifierState("Shift"));
+                }
+                
             }
             break;
         case "Delete":
@@ -114,15 +116,17 @@ function OnKeydownForNavigationEditing(event) {
                 console.log("keydown fook: " + event.key + "focus:" + offset);
 
                 event.preventDefault();
-                
+                if(selection.focusNode){
+                    if(selection.focusNode.scrollIntoView){
+                        selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
+                    }
+                }
                 if (selection.isCollapsed) {
                     SwitchInputDelete(node, offset, event.getModifierState("Shift"));
                 }else{                    
                     CutSelection(event.currentTarget, selection);
                 }
-                if(selection.focusNode){
-                    selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
-                }
+                
             }
             break;
         case "Backspace":
@@ -131,15 +135,17 @@ function OnKeydownForNavigationEditing(event) {
                 console.log("keydown fook: " + event.key + "focus:" + offset);
 
                 event.preventDefault();
-
+                if(selection.focusNode){
+                    if(selection.focusNode.scrollIntoView){
+                        selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
+                    }
+                }
                 if (selection.isCollapsed) {
                     SwitchInputBackspace(node, offset, event.getModifierState("Shift"));
                 } else{
                     CutSelection(event.currentTarget, selection);
                 }
-                if(selection.focusNode){
-                    selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
-                }
+                
 
             }
             break;
