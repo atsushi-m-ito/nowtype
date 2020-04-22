@@ -1,0 +1,103 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+#  push:
+#    branches: [ master ]
+  release:
+    types: [created]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build-win:
+    # The type of runner that the job will run on
+    runs-on: windows-latest   
+    # GH_TOKEN is necessary for electron-builder on windowns
+    env: 
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - run: echo ${{ github.ref }}
+    - run: echo "upload_url = ${{ github.event.release.upload_url }}"
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+    - run: npm ci
+    - run: npm run build
+    #- run: dir
+    #- run: dir dist/
+    #- run: mkdir artifact
+    #- run: mv dist/nowtype_setup*.exe artifact/
+    - name: upload to release assets
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: "./dist/nowtype_setup*.exe"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#    - uses: actions/upload-artifact@v1
+#      with:
+#        name: build-win
+#        path: artifact
+#    - uses: actions/upload-release-asset@v1
+#      with:
+#        upload_url: ${{ github.ref }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+#        asset_path: "artifact/nowtype_setup*.exe"
+#        asset_name: my-artifact.exe
+#        asset_content_type: application/exe
+
+  # This workflow contains a single job called "build"
+  build-linux:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest   
+    # GH_TOKEN is necessary for electron-builder on windowns
+    env: 
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+    - run: npm ci
+    - run: npm run build-linux
+    - name: upload to release assets
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          ./dist/nowtype_setup*.deb
+          ./dist/nowtype_setup*.rpm
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # This workflow contains a single job called "build"
+  build-mac:
+    # The type of runner that the job will run on
+    runs-on: macos-latest   
+    # GH_TOKEN is necessary for electron-builder on windowns
+    env: 
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+    - run: npm ci
+    - run: npm run build-mac
+    - name: upload to release assets
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: ./dist/nowtype_setup*.dmg
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
