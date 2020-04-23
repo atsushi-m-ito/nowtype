@@ -27,7 +27,7 @@ function MO_OnCompositionChange(record_list){
                     const last = MO_update_list[MO_update_list.length-1];
                     if((last.record.type == record.type) && (last.record.target === record.target)){
                         new_target_update = false;
-                        console.log("MutationObserver detect (not new):",last.type,"\n", last.oldValue, "\nto\n", last.target);
+                        console.log("MutationObserver detect (not new):",last.record.type,"\n", last.record.oldValue, "\nto\n", last.record.target);
                     }
                 }
                 if(new_target_update){
@@ -36,12 +36,13 @@ function MO_OnCompositionChange(record_list){
                 }
             }else if(record.type==="childList"){
                 if(record.addedNodes.length>0){
-                    const offset = GetIndex(record.target, record.addedNodes.item(0));
+                    const offset = (record.previousSibling === null) ? 0 : (GetIndex(record.target, record.previousSibling) + 1);
                     MO_update_list.push({record:record, offset: offset});
                     console.log("MutationObserver detect: add\n", 
                         record.addedNodes.item(0), "\non offset=",offset,"\n", record.target);
                 }else{
-                    const offset = GetIndex(record.target, record.nextSibling);
+                    //const offset = GetIndex(record.target, record.nextSibling);
+                    const offset = (record.previousSibling === null) ? 0 : (GetIndex(record.target, record.previousSibling) + 1);
                     MO_update_list.push({record:record, offset: offset});
                     console.log("MutationObserver detect: remove\n", 
                         record.removedNodes.item(0), "\non offset=",offset,"\n", record.target);
@@ -53,7 +54,12 @@ function MO_OnCompositionChange(record_list){
 
     //for Chrome (case that the last MutationObserver just after compositionend by Delete/Bakspace key)//
     if((!MO_in_composition) && (MO_update_list.length > 0)){ 
+        undo_man.GetChangeEventDispatcher().Disable();
         MO_RegisterIMEUpdate();
+        //undo because DOM is broken by Chrome bug//
+        ExecUndo();
+        undo_man.Shrink();
+        undo_man.GetChangeEventDispatcher().Enable();
     }
 }
 
@@ -164,6 +170,8 @@ function MO_RegisterIMEUpdate(){
     console.log("MO_RegisterIMEUpdate");
 
     let modified_text_list = [];
+
+    let warning_math_list = [];
     
     
     undo_man.Begin(MO_IME_node_origin, MO_IME_offset_origin);
@@ -185,6 +193,19 @@ function MO_RegisterIMEUpdate(){
                     console.log("IME: added node", node, ", offset=", offset);
                     undo_man.Register(UR_TYPE.ADD_NODE, node, parent, offset, 1);
                     ++offset;
+
+                    // Chromium bug! //
+                    // original text is also removed when the IME new text is removed by delete/backspace//
+                    // After that, original text is inputed into the previus span.math->span.edit //
+                    // Then this text should be fixed //
+                    if(parent.className=="math"){
+                        warning_math_list.push(parent);
+                    }else if( parent.parentNode.className == "math"){
+                        if(node.nodeType != Node.TEXT_NODE){
+                            warning_math_list.push(parent.parentNode);
+                        }
+                    }
+
                 });
             }
             else if(record.removedNodes.length>0){
@@ -192,7 +213,12 @@ function MO_RegisterIMEUpdate(){
                 const offset = record_offset.offset;
                 record.removedNodes.forEach( (node)=>{
                     console.log("IME: removed node", node, ", offset=", offset);
-                    undo_man.Register(UR_TYPE.REMOVE_NODE, node, parent, offset, 1);                    
+                    undo_man.Register(UR_TYPE.REMOVE_NODE, node, parent, offset, 1);        
+                    
+                    if(parent.className=="math"){
+                        warning_math_list.push(parent);
+                    }
+
                 });
             }
         }
@@ -275,7 +301,14 @@ function MO_RegisterIMEUpdate(){
         }        
     });
     
-    
+    //Chromium bug: SPAN for math is chenge by IME when the new input text is removed by delete/backspace key//
+    /*
+    warning_math_list.forEach((math) => {
+        //fix the math node by some operation//
+        However, the current way is simply ExecUndo is called
+    });
+    */
+
 
     let focus_node = document.getSelection().focusNode;
     let focus_offset = document.getSelection().focusOffset;
