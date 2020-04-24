@@ -1,6 +1,6 @@
 {
   "name": "nowtype",
-  "version": "0.3.25",
+  "version": "0.3.26",
   "description": "NowType is a markdown editor",
   "main": "ele.main.js",
   "devDependencies": {
@@ -19,13 +19,13 @@
     "minify": "terser -o nowtype.min.js -c drop_console=true ./src/nt.*.js"
   },
   "author": {
-    "name":"Atsushi M. Ito", 
+    "name": "Atsushi M. Ito",
     "email": "atsushi-m-ito@email.jp"
   },
   "homepage": "https://github.com/atsushi-m-ito/nowtype",
   "license": "MIT",
   "build": {
-    "artifactName": "${productName}_setup_${version}_${os}.${ext}",    
+    "artifactName": "${productName}_setup_${version}_${os}.${ext}",
     "win": {
       "icon": "./icon.png",
       "target": "nsis"
