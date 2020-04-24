@@ -1,0 +1,181 @@
+
+
+@font-face {
+    font-family: 'Noto Serif JP';
+    font-style: normal;
+    font-weight: normal;
+    src: url('../font/Noto_Serif_JP/NotoSerifJP-Regular.otf') format('opentype');
+    font-display: swap;
+}
+
+
+@font-face {
+    font-family: 'Noto Serif JP';
+    font-style: normal;
+    font-weight: bold;
+    src: url('../font/Noto_Serif_JP/NotoSerifJP-Bold.otf') format('opentype');
+    font-display: swap;
+}
+
+/*
+Reference for CSSfont:
+https://w3g.jp/blog/use_yufamily
+*/
+@font-face {
+	font-family: 'MyYuMinchoM';
+	font-weight: normal;
+	src: local('YuMincho-Medium'), /* PostScript Name = localの正式な指定方法 */
+	local('Yu Mincho Medium'),     /* PostScript Nameを認識できないChrome用にFull Nameを指定 */
+	local('YuMincho-Regular');     /* 游ゴシックMediumが存在しないWindows8.1用 */
+}
+@font-face {
+	font-family: 'MyYuMinchoM';
+	font-weight: bold;
+	src: local('YuMincho-Bold'), /* PostScript Name = localの正式な指定方法 */
+	local('Yu Mincho');          /* PostScript Nameを認識できないChrome用にFull Nameを指定 */
+}
+.sample{
+	font-family :
+	MyYuMinchoM, /* Windows調整用 */
+	YuMinch,    /* Mac用 */
+	sans-serif;
+}
+
+
+div#paper {
+    /*position: relative;*/
+    margin-top: 3px;
+    margin-bottom: 3px;
+    transform-origin: 50% 0%;
+    width: 210mm;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 25mm;
+    padding-bottom: 25mm;
+
+    /* user settings */
+    font-size: 11pt;
+    font-family: "NotoSerifJP","Noto Serif JP","BIZ UDPMincho","MS PMincho","YuMincho",serif;
+    background: white;
+    color: black;
+}
+
+div#render_div{ 
+    width: 170mm;
+    min-height: 246mm;  
+    margin-left: auto;
+    margin-right: auto;
+    border: dotted  1px;
+    outline: none;    /* this is necessary to prevent that the border added by browser when element get the focus */
+    white-space: pre-wrap;
+}
+
+h1{
+    counter-reset: chapter;
+}
+h2{
+    border-bottom: solid 1px #C3C3C3;
+    counter-reset: section;
+}
+h3{
+    counter-reset: subsection;
+}
+/*
+h2::before{
+    counter-increment: chapter;
+    content: counter(chapter) ". ";
+}
+h3::before{
+    counter-increment: section;
+    content: counter(chapter) "." counter(section) ". ";
+}
+h4::before{
+    counter-increment: subsection;
+    content: counter(chapter) "." counter(section) "."  counter(subsection) ". ";
+}
+*/
+
+
+/* # this is the CSS necessary for NowType operation*/
+
+        
+span.math{margin-left: 1pt; margin-right: 1pt;}
+span.editmath{white-space: pre-wrap; color: #000000; background-color: #ececec; font-family: consolas, monospace;}
+span.editmathdisp{ display: block; white-space: pre-wrap ; color: #000000; background-color: #ececec;font-family: consolas, monospace;}
+
+span.editcode{white-space: pre-wrap; color: #000000; background-color: #ececec; font-family: consolas, monospace;}
+span.previewcode{white-space: pre-wrap; margin-left: 1pt; margin-right: 1pt; padding-left: 1pt; padding-right: 1pt; border: solid 1px #C0C080; border-radius: 3px; color: #000000; background-color: #ffffbc; font-family: consolas, monospace;}
+span.editcodedisp{display: block; white-space: pre-wrap; padding: 5pt; color: #e6e6e6; background-color: #364545; font-family: consolas, monospace;}
+span.previewcodedisp{display: block; white-space: pre-wrap; padding: 5pt; border: solid 1px #C0C080; border-radius: 3px; color: #e6e6e6; background-color: #364545; font-family: consolas, monospace;}
+
+span.editem1{ font-weight: normal; font-style: italic; background-color: #ececec;  padding-right: 4pt;}
+span.editem2{ font-weight: bold; font-style: normal; background-color: #ececec; }
+span.editem3{ font-weight: bold; font-style: italic; background-color: #ececec;  padding-right: 4pt;}
+
+span.editimg{white-space: pre-wrap; color: #000000; background-color: #ececec;}
+span.edita{white-space: pre-wrap; color: #000000; background-color: #ececec;}
+span.editcite{white-space: pre-wrap; color: #000000; background-color: #ececec; font-size: 80%;}
+a.previewcite{margin-left: 1pt; margin-right: 1pt; padding-left: 1pt; padding-right: 1pt; font-size: 80%;background-color: #eccccc;}
+span.editref{white-space: pre-wrap; color: #000000; background-color: #ececec;}
+span.previewref{white-space: pre-wrap; color: #000000; background-color: #d8ff4c;}
+
+
+a.previewcite::before{
+    content: "[^";
+}
+a.previewcite::after{
+    content: "]";
+}
+span.previewref::before{
+    content: "[^";
+}
+span.previewref::after{
+    content: "]: ";
+}
+
+
+em.readerror{ font-weight: bold; font-style: normal; color: #FF0000; }
+
+span.math > img {
+    padding-right: 2pt; font-weight: bold; font-style: normal; color: #FF0000;
+    max-width: 100%;
+    height: auto;
+}
+
+figure{ 
+    border: dotted  1px;
+    text-align: center;
+    margin-left:auto;
+    margin-right:auto;
+    width: 80%;
+}
+figcaption{ text-align: justify;}
+
+/*p{padding: 5pt;}*/
+
+
+table{
+    border-collapse: collapse;
+    margin-left:auto;
+    margin-right:auto;
+    width: 80%;
+    table-layout: fixed;
+}        
+tr:nth-child(odd) {
+    background-color:  #ddeeff;
+}
+tr:nth-child(even) {
+    background-color:  #eeeeee;
+}
+th{
+    font-weight: normal;
+    background-color:  #bbddff;
+    border: solid 1px #000000;
+    padding: 4px;
+}
+td{
+    border: solid 1px #000000;
+    padding: 4px;
+}
+
+
