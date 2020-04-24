@@ -1,23 +1,20 @@
 
 
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap');
-
 @font-face {
-    font-family: 'nt-Noto Serif JP';
+    font-family: 'local-Noto Serif JP';
     font-style: normal;
     font-weight: normal;
-    src: url('../font/Noto_Serif_JP/NotoSerifJP-Regular.otf') format('opentype'),
-         local('Noto Serif JP');
+    src: url('../font/Noto_Serif_JP/NotoSerifJP-Regular.otf') format('opentype');
     font-display: swap;
 }
 
 
 @font-face {
-    font-family: 'nt-Noto Serif JP';
+    font-family: 'local-Noto Serif JP';
     font-style: normal;
     font-weight: bold;
-    src: url('../font/Noto_Serif_JP/NotoSerifJP-Bold.otf') format('opentype'),
-         local('Noto Serif JP');
+    src: url('../font/Noto_Serif_JP/NotoSerifJP-Bold.otf') format('opentype');
     font-display: swap;
 }
 
@@ -35,7 +32,7 @@ div#paper {
 
     /* user settings */
     font-size: 11pt;
-    font-family: "nt-Noto Serif JP","BIZ UDPMincho","YuMincho","MS PMincho",serif;
+    font-family: "local-Noto Serif JP","Noto Serif JP","BIZ UDPMincho","YuMincho","MS PMincho",serif;
     background: white;
     color: black;
 }

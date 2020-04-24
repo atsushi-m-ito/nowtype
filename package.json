@@ -1,12 +1,11 @@
 {
   "name": "nowtype",
-  "version": "0.3.26",
+  "version": "0.3.27",
   "description": "NowType is a markdown editor",
   "main": "ele.main.js",
   "devDependencies": {
     "electron": "^8.2.3",
     "electron-builder": "^22.5.1",
-    "node-minify": "^3.6.0",
     "terser": "^4.6.11"
   },
   "scripts": {
@@ -15,7 +14,6 @@
     "build-portable": "electron-builder -w portable --x64",
     "build-mac": "electron-builder -m",
     "build-linux": "electron-builder -l deb rpm",
-    "minify_old": "node-minify --compressor uglify-es --input ./src/nt.*.js --output ./nowtype.min.js  ",
     "minify": "terser -o nowtype.min.js -c drop_console=true ./src/nt.*.js"
   },
   "author": {
@@ -39,5 +37,6 @@
     "linux": {
       "icon": "./icon.icns"
     }
-  }
+  },
+  "dependencies": {}
 }
