@@ -1,22 +1,5 @@
 
 
-@font-face {
-    font-family: 'Noto Serif JP';
-    font-style: normal;
-    font-weight: normal;
-    src: url('../font/Noto_Serif_JP/NotoSerifJP-Regular.otf') format('opentype');
-    font-display: swap;
-}
-
-
-@font-face {
-    font-family: 'Noto Serif JP';
-    font-style: normal;
-    font-weight: bold;
-    src: url('../font/Noto_Serif_JP/NotoSerifJP-Bold.otf') format('opentype');
-    font-display: swap;
-}
-
 /*
 Reference for CSSfont:
 https://w3g.jp/blog/use_yufamily
@@ -27,12 +10,6 @@ https://w3g.jp/blog/use_yufamily
 	src: local('YuMincho-Medium'), /* PostScript Name = localの正式な指定方法 */
 	local('Yu Mincho Medium'),     /* PostScript Nameを認識できないChrome用にFull Nameを指定 */
 	local('YuMincho-Regular');     /* 游ゴシックMediumが存在しないWindows8.1用 */
-}
-@font-face {
-	font-family: 'MyYuMinchoM';
-	font-weight: bold;
-	src: local('YuMincho-Bold'), /* PostScript Name = localの正式な指定方法 */
-	local('Yu Mincho');          /* PostScript Nameを認識できないChrome用にFull Nameを指定 */
 }
 .sample{
 	font-family :

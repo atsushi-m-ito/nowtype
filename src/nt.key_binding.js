@@ -1648,17 +1648,22 @@ and, if ol/ul node becomes empty, remove it
 function RaiseFirstLi(ol_node) {
     const ol_li = ol_node.firstChild;
 
-    if ((ol_li.childNodes.length !== 1) || (ol_li.firstChild.nodeName !== "BR")) {
-        const fragment = SafeRemoveNodeList(ol_li, ol_li.firstChild);
+    if((ol_li.firstChild.nodeName == "BR") && (ol_li.childNodes.length == 1) ){
+        RemoveNode(ol_node);
+    
+    }else{    
+        const fragment = RemoveNodeList(ol_li, ol_li.firstChild);
+        RemoveNode(ol_li);
         const head = AddNodeList(ol_node.parentNode, ol_node, fragment); //become safe for math by the following two lines//
         SafeJunctionPoint(ol_node.parentNode, head);
-        SafeJunctionPoint(ol_node.parentNode, ol_node);
+        if(ol_node.hasChildNodes()){
+            SafeJunctionPoint(ol_node.parentNode, ol_node);
+        }else{
+            RemoveNode(ol_node);
+        }
     }
 
-    RemoveNode(ol_li);
-    if (!ol_node.hasChildNodes()) {
-        RemoveNode(ol_node);
-    }
+    
 }
 
 function LastFocusInList(prev){
