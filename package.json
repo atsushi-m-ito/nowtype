@@ -1,6 +1,6 @@
 {
   "name": "nowtype",
-  "version": "0.3.27",
+  "version": "0.3.28",
   "description": "NowType is a markdown editor",
   "main": "ele.main.js",
   "devDependencies": {
