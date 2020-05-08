@@ -1,21 +1,10 @@
 
 
-/*
-Reference for CSSfont:
-https://w3g.jp/blog/use_yufamily
-*/
 @font-face {
-	font-family: 'MyYuMinchoM';
-	font-weight: normal;
-	src: local('YuMincho-Medium'), /* PostScript Name = localの正式な指定方法 */
-	local('Yu Mincho Medium'),     /* PostScript Nameを認識できないChrome用にFull Nameを指定 */
-	local('YuMincho-Regular');     /* 游ゴシックMediumが存在しないWindows8.1用 */
-}
-.sample{
-	font-family :
-	MyYuMinchoM, /* Windows調整用 */
-	YuMinch,    /* Mac用 */
-	sans-serif;
+    font-family: 'MyYuMinchoC';
+    src: local('YuMincho-Demibold'),  /* for Win */
+         local('YuMincho Demibold');  /* for Mac */
+  
 }
 
 
@@ -32,9 +21,17 @@ div#paper {
 
     /* user settings */
     font-size: 11pt;
-    font-family: "NotoSerifJP","Noto Serif JP","BIZ UDPMincho","MS PMincho","YuMincho",serif;
+    font-family: 'YuMincho',    /* for Mac (as Medium)*/
+    'MyYuminchoC'               /* for Chrome and firefox on Windows */
+    ,serif;
     background: white;
     color: black;
+}
+
+@supports (-ms-ime-align: auto){ /* for Edge(Legacy) */
+div#paper {
+    font-family: 'Yu Mincho Demibold' ,serif;
+}
 }
 
 div#render_div{ 
@@ -86,8 +83,9 @@ span.editcodedisp{display: block; white-space: pre-wrap; padding: 5pt; color: #e
 span.previewcodedisp{display: block; white-space: pre-wrap; padding: 5pt; border: solid 1px #C0C080; border-radius: 3px; color: #e6e6e6; background-color: #364545; font-family: consolas, monospace;}
 
 span.editem1{ font-weight: normal; font-style: italic; background-color: #ececec;  padding-right: 4pt;}
-span.editem2{ font-weight: bold; font-style: normal; background-color: #ececec; }
-span.editem3{ font-weight: bold; font-style: italic; background-color: #ececec;  padding-right: 4pt;}
+span.editem2{ font-weight: 800; font-style: normal; background-color: #ececec; }
+span.editem3{ font-weight: 800; font-style: italic; background-color: #ececec;  padding-right: 4pt;}
+strong{font-weight: 800; }
 
 span.editimg{white-space: pre-wrap; color: #000000; background-color: #ececec;}
 span.edita{white-space: pre-wrap; color: #000000; background-color: #ececec;}
