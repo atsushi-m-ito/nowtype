@@ -4,7 +4,6 @@ const NT_LINK_DEFAULT_URL = "https://sample.url";
 const NT_LINK_DEFAULT_TEXT = "PreviewWord";
 
 
-
 function OnKeyup(event) {
 
     switch (event.key) {
@@ -15,7 +14,12 @@ function OnKeyup(event) {
         case "PageUp":
         case "PageDown":
             {
-                const selection = document.getSelection();
+                if(!CorrectSelectionEdgeTable()){
+                    event.preventDefault();
+                    return false;
+                }
+
+                const selection = document.getSelection();                
                 console.log("keyup   fook: " + event.key + "focus: node=" + selection.focusNode.tagName + ", offset=" + selection.focusOffset);
                 const focus_math = CheckEditPreview(event.currentTarget);
                 console.log("focus_math",focus_math, g_editable_math);
@@ -38,47 +42,66 @@ function OnKeyup(event) {
 }
 
 
-function OnKeydownForNavigationEditing(event) {
+function OnKeydownForNavigation(event) {
     if(event.isComposing){
         console.log("nothing to do for composing");
         return;
     }
     
-    console.log("keydown(SP):", event.key);
+    if(nt_selected_cell) {
+        OnKeydownForNavigationTable(event);
+        return;
+    }
     
+    console.log("keydown(Navi):", event.key);  
     
     
     //without special keys//
     const selection = document.getSelection();
-    const [node,offset] = (selection.isCollapsed) ? CorrectFocusToText(selection.focusNode, selection.focusOffset) : [selection.focusNode, selection.focusOffset];
+    const [node,offset] = (selection.isCollapsed) ? CorrectFocusToText(selection.focusNode, selection.focusOffset)
+         : [selection.focusNode, selection.focusOffset];
     
 
     switch (event.key) {        
         case "ArrowUp":
+            {       
+                
+                const td = CheckNodeInTD(selection.focusNode, event.currentTarget);
+                if(td){
+                    console.log("keydown Up, td: ",td);
+                    if(event.getModifierState("Shift")){
+                        SetSelectTable(td,td);
+                        event.preventDefault();
+                    }else{
+                        const res = SwitchInputArrowUp(td);
+                        if(res){
+                            event.preventDefault();                            
+                        }
+                    }
+                }
+            }
+            break;       
         case "ArrowDown":
             {
                 
-                if (selection.isCollapsed) {
-                    const selection = document.getSelection();
-                    const td = CheckNodeInTD(selection.focusNode, event.currentTarget);
-                    console.log("keydown Up/Down, td: ",td);
-                    if(td){
-                        let res;
-                        if(event.key === "ArrowUp"){
-                            res = SwitchInputArrowUp(td);
-                        }else{
-                            res = SwitchInputArrowDown(td);
-                        }
+                
+                const td = CheckNodeInTD(selection.focusNode, event.currentTarget);
+                if(td){
+                    console.log("keydown Down, td: ",td);                    
+                    if(event.getModifierState("Shift")){
+                        SetSelectTable(td,td);
+                        event.preventDefault();
+                    }else{
+                        const res = SwitchInputArrowDown(td);                        
                         if(res){
-                            event.preventDefault();
-                            
+                            event.preventDefault();                            
                         }
                     }
                 }
             }
             break;          
         case "ArrowLeft":
-            {                
+            {            
                 const res = SwitchInputArrowLeft(node, offset, event.getModifierState("Shift"));
                 if(res){
                     event.preventDefault();
@@ -86,7 +109,7 @@ function OnKeydownForNavigationEditing(event) {
             }
             break;
         case "ArrowRight":
-            {                
+            {
                 const res = SwitchInputArrowRight(node, offset, event.getModifierState("Shift"));
                 if(res){
                     event.preventDefault();                
@@ -123,7 +146,8 @@ function OnKeydownForNavigationEditing(event) {
                 }
                 if (selection.isCollapsed) {
                     SwitchInputDelete(node, offset, event.getModifierState("Shift"));
-                }else{                    
+                }else{   
+                    CorrectSelectionEdgeTable();                 
                     CutSelection(event.currentTarget, selection);
                 }
                 
@@ -143,6 +167,7 @@ function OnKeydownForNavigationEditing(event) {
                 if (selection.isCollapsed) {
                     SwitchInputBackspace(node, offset, event.getModifierState("Shift"));
                 } else{
+                    CorrectSelectionEdgeTable();
                     CutSelection(event.currentTarget, selection);
                 }
                 
@@ -182,6 +207,7 @@ function OnKeydownForAsciiChar(event) {
 }
 
 function TryInputAsciiChar(char) {
+    if(nt_selected_cell) return false;
     
     //without special keys//
     const selection = document.getSelection();
@@ -267,6 +293,7 @@ function TryInputAsciiChar(char) {
                     if (char.length === 1) {                        
 
                         if (!selection.isCollapsed) {
+                            CorrectSelectionEdgeTable();
                             CutSelection(event.currentTarget, selection);                            
                             [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
                         }
@@ -2268,60 +2295,61 @@ function SwitchInputArrowRight(node, offset, is_shift) {
     
 
     switch (node.nodeName) {
-        case "P":
-        case "H1":
-        case "H2":
-        case "H3":
-        case "H4":
-        case "H5":
-        case "H6":
-        case "LI":
-        case "FIGCAPTION":
-        case "FIGURE":
-        case "TH":
-        case "TD":
-            {       
-                let ch = node.childNodes.item(offset);    
-                if(ch){
-                    if( ch.nodeType===Node.TEXT_NODE){
-                        document.getSelection().collapse(ch, 1);
-                        return true;
-                    }else if(ch.className==="math"){
-                        const focus = EnableMathEdit(ch, 1);
-                        document.getSelection().collapse(focus.node, focus.offset);
-                        return true;
-                    }else if(ch.nodeName == "BR"){
-                        //document.getSelection().collapse(node, offset + 1);
-                        //return true;
-                        node = ch;
-                    }else{
-                        const focus = FocusOffsetZero(ch);
-                        if(focus){
-                            document.getSelection().collapse(focus.node, focus.offset);                            
-                        }else{
-                            console.error("cannot find focus position");                            
-                        }
-                        return true;
-                    }
-                }
-
-                let p = node;
-                while (p.nextSibling===null){                    
-                    p = p.parentNode;
-                    if(p.tagName==="DIV"){return true;}
-                }
-                const focus = FocusOffsetZero(p.nextSibling);
-                if(focus){
-                    document.getSelection().collapse(focus.node, focus.offset);                            
+    case "P":
+    case "H1":
+    case "H2":
+    case "H3":
+    case "H4":
+    case "H5":
+    case "H6":
+    case "LI":
+    case "FIGCAPTION":
+    case "FIGURE":
+    case "TH":
+    case "TD":
+    case "DIV":
+        {       
+            let ch = node.childNodes.item(offset);    
+            if(ch){
+                if( ch.nodeType===Node.TEXT_NODE){
+                    document.getSelection().collapse(ch, 1);
+                    return true;
+                }else if(ch.className==="math"){
+                    const focus = EnableMathEdit(ch, 1);
+                    document.getSelection().collapse(focus.node, focus.offset);
+                    return true;
+                }else if(ch.nodeName == "BR"){
+                    //document.getSelection().collapse(node, offset + 1);
+                    //return true;
+                    node = ch;
                 }else{
-                    console.error("cannot find focus position");                            
+                    const focus = FocusOffsetZero(ch);
+                    if(focus){
+                        document.getSelection().collapse(focus.node, focus.offset);                            
+                    }else{
+                        console.error("cannot find focus position");                            
+                    }
+                    return true;
                 }
-                
-                return true;
-                
-                
             }
-        
+
+            let p = node;
+            while (p.nextSibling===null){                    
+                p = p.parentNode;
+                if(p.tagName==="DIV"){return true;}
+            }
+            const focus = FocusOffsetZero(p.nextSibling);
+            if(focus){
+                document.getSelection().collapse(focus.node, focus.offset);                            
+            }else{
+                console.error("cannot find focus position");                            
+            }
+            
+            return true;
+            
+            
+        }
+        break;        
     }
 
     return false;
@@ -2399,58 +2427,96 @@ function SwitchInputArrowRightShift(node, offset) {
         
     }    
     
+    //for select table mode//
+    if((node.tagName == "TH") || (node.tagName == "TD")){
+        if(offset == node.childNodes.length){
+            SetSelectTable(node, node);
+            return true;
+        }
+    }
+
 
     switch (node.nodeName) {
-        case "P":
-        case "H1":
-        case "H2":
-        case "H3":
-        case "H4":
-        case "H5":
-        case "H6":
-        case "LI":
-        case "FIGCAPTION":
-        case "FIGURE":
-        case "TH":
-        case "TD":
-            {       
-                const ch = node.childNodes.item(offset);    
-                if(ch){
-                    if( ch.nodeType===Node.TEXT_NODE){
-                        document.getSelection().extend(ch, 1);
-                        return true;
-                    }else if(ch.nodeName == "SPAN"){
-                        document.getSelection().extend(node, offset+1);
-                        return true;
-                    }else if(ch.nodeName =="BR"){
-                        node = ch;
-                    }else {
-                        const focus = FocusOffsetZero(ch, false);
-                        if(focus){
-                            document.getSelection().extend(focus.node, focus.offset);                            
-                        }else{
-                            console.error("cannot find focus position", ch);                            
-                        }
-                        return true;
+    case "P":
+    case "H1":
+    case "H2":
+    case "H3":
+    case "H4":
+    case "H5":
+    case "H6":
+    case "LI":
+    case "FIGCAPTION":
+    case "FIGURE":
+    case "TH":
+    case "TD":
+        {       
+            const ch = node.childNodes.item(offset);    
+            if(ch){
+                if( ch.nodeType===Node.TEXT_NODE){
+                    document.getSelection().extend(ch, 1);
+                    return true;
+                }else if(ch.nodeName == "SPAN"){
+                    document.getSelection().extend(node, offset+1);
+                    return true;
+                }else if(ch.nodeName =="BR"){
+                    node = ch;
+                }else {
+                    const focus = FocusOffsetZero(ch, false);
+                    if(focus){
+                        document.getSelection().extend(focus.node, focus.offset);                            
+                    }else{
+                        console.error("cannot find focus position", ch);                            
                     }
+                    return true;
                 }
+            }
 
-                let p = node;
-                while (p.nextSibling===null){                    
-                    p = p.parentNode;
-                    if(p.tagName==="DIV"){return true;}
-                }
-                
-                const focus = FocusOffsetZero(p.nextSibling,false);
+            let p = node;
+            while (p.nextSibling===null){                    
+                p = p.parentNode;
+                if(p.tagName==="DIV"){return true;}
+            }
+            
+            //check which prev element is table or not//
+            if(p.nextSibling.nodeName=="TABLE"){
+                const table = p.nextSibling;
+                const master = table.parentNode;
+                document.getSelection().extend(master, GetIndex(master, table)+1);
+                return true;
+            }
+            
+            const focus = FocusOffsetZero(p.nextSibling,false);
+            if(focus){
+                document.getSelection().extend(focus.node, focus.offset);                          
+            }else{
+                console.error("cannot find focus position", p.nextSibling);
+            }
+            return true;
+            
+        }
+        break;
+    case "DIV":
+        //check when node is master div//
+        {
+            const expect_table = node.childNodes.item(offset);
+            if(expect_table===null){
+                return false;
+            }
+            if(expect_table.nodeName=="TABLE"){
+                document.getSelection().extend(node, offset+1);
+                return true;
+            }else{
+                const focus = FocusOffsetZero(expect_table, false);
                 if(focus){
-                    document.getSelection().extend(focus.node, focus.offset);                          
+                    document.getSelection().extend(focus.node, focus.offset);                            
                 }else{
-                    console.error("cannot find focus position", p.nextSibling);
+                    console.error("cannot find focus position", expect_table);                            
                 }
                 return true;
-               
-            }
-        
+            }        
+        }
+        break;
+    
     }
     return false;
 }
@@ -2585,7 +2651,8 @@ function SwitchInputArrowLeft(node, offset, is_shift) {
     case "FIGCAPTION":
     case "FIGURE":
     case "TH":
-    case "TD":            
+    case "TD":  
+    case "DIV":           
         {               
             const ch = node.childNodes.item(offset-1);
             if(ch ){
@@ -2696,6 +2763,14 @@ function SwitchInputArrowLeftShift(node, offset) {
         }
     }
     
+    //for select table mode//
+    if((node.tagName == "TH") || (node.tagName == "TD")){
+        if(offset == 0){
+            SetSelectTable(node, node);
+            return true;
+        }
+    }
+
 
 
     switch (node.tagName) {
@@ -2738,6 +2813,15 @@ function SwitchInputArrowLeftShift(node, offset) {
                 p = p.parentNode;
                 if(p.tagName==="DIV"){return true;}
             }
+            
+            //check which prev element is table or not//
+            if(p.previousSibling.nodeName=="TABLE"){
+                const table = p.previousSibling;
+                const master = table.parentNode;
+                document.getSelection().extend(master, GetIndex(master, table));
+                return true;
+            }
+
             const focus = FocusOffsetLast(p.previousSibling, false);
             if(focus){
                 document.getSelection().extend(focus.node, focus.offset);                            
@@ -2746,6 +2830,28 @@ function SwitchInputArrowLeftShift(node, offset) {
             }
             return true;
         }
+        break;
+    case "DIV":  
+        {
+        //check when node is master div//
+            const expect_table = node.childNodes.item(offset-1);
+            if(expect_table===null){
+                return false;
+            }
+            if(expect_table.nodeName=="TABLE"){
+                document.getSelection().extend(node, offset-1);
+                return true;
+            }else{
+                const focus = FocusOffsetLast(expect_table, false);
+                if(focus){
+                    document.getSelection().extend(focus.node, focus.offset);                            
+                }else{
+                    console.error("cannot find focus position", expect_table);                            
+                }
+                return true;
+            }
+        }
+        break;
     }
     return false; 
 }
@@ -3984,22 +4090,6 @@ function GetTableSize(text){
 }
 
 
-function CheckNodeInTD(ref_node,  master_node){
-
-    let node = ref_node;
-    while(node){
-        if(node === master_node){
-            return null;
-        }
-
-        if((node.nodeName === "TD") || (node.nodeName === "TH")){
-            return node;
-        }
-
-        node = node.parentNode;
-    }
-    return null;
-}
 
 function SwitchInputArrowUp(td){
     const tr = td.parentNode;

@@ -3,80 +3,108 @@
 
 
 function OnCut(event){
+    if(nt_selected_cell){ 
+        OnCutTable(event); 
+        return;
+    }
+
     console.log("fook cut on " + event.currentTarget);
     event.preventDefault();
+    if(!event.clipboardData){
+        console.error("event.clipboardData is not defined");
+        return;
+    }
 
-    let fragment = CutSelection(event.currentTarget, document.getSelection());
+    CorrectSelectionEdgeTable();
+    const fragment = CutSelection(event.currentTarget, document.getSelection());
     if(fragment===null) return;
 
-    if(event.clipboardData){
-        let md_text = DOM2MD(fragment);
-        event.clipboardData.setData("text/plain", md_text);
-        
-        let temp =  document.createElement("DIV");
-        temp.appendChild(fragment);        
-        console.log("copy to clipboard as html: " + temp.innerHTML);
+    let md_text = DOM2MD(fragment);
+    event.clipboardData.setData("text/plain", md_text);
+    
+    let temp =  document.createElement("DIV");
+    temp.appendChild(fragment);        
+    console.log("copy to clipboard as html: " + temp.innerHTML);
 
-        console.log("copy to clipboard as markdown: " + md_text);
-    }
+    console.log("copy to clipboard as markdown: " + md_text);
            
 }
 
 function OnCopy(event){
+
+    if(nt_selected_cell){ 
+        OnCopyTable(event); 
+        return;
+    }
+
     console.log("fook copy on " + event.currentTarget);
     event.preventDefault();
-    
-    if(event.clipboardData){
-        undo_man.GetChangeEventDispatcher().Disable();
-        const fragment = CutSelection(event.currentTarget, document.getSelection());
-        if(fragment){
-            ExecUndo();
-        }
-        undo_man.Shrink();
-        undo_man.GetChangeEventDispatcher().Enable();
-        if(fragment===null) return;
 
-        const md_text = DOM2MD(fragment);
-        event.clipboardData.setData("text/plain", md_text);
-        
-        const temp =  document.createElement("DIV");
-        temp.appendChild(fragment);        
+    if(!event.clipboardData){
+        console.error("event.clipboardData is not defined");
+        return;
     }
+
+    
+    undo_man.GetChangeEventDispatcher().Disable();
+    CorrectSelectionEdgeTable();
+    const fragment = CutSelection(event.currentTarget, document.getSelection());
+    if(fragment){
+        ExecUndo();
+        undo_man.Shrink();
+    }        
+    undo_man.GetChangeEventDispatcher().Enable();
+    if(fragment===null) return;
+
+    const md_text = DOM2MD(fragment);
+    event.clipboardData.setData("text/plain", md_text);
+    
+    const temp =  document.createElement("DIV");
+    temp.appendChild(fragment);
            
 }
 
 function OnPaste(event){
+    if(nt_selected_cell){ 
+        OnPasteTable(event); 
+        return;
+    }
+
     console.log("fook paste on " + event.currentTarget);
     event.preventDefault();
-    
-    const clipboardData = event.clipboardData;
 
-    if(clipboardData ){
-        let text = clipboardData.getData("text/plain");
-        console.log(text);
-
-        const selection = document.getSelection();
-        if (!selection.isCollapsed) {
-            CutSelection(event.currentTarget, selection);
-        }
-
-        const [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
-        if(IsTextNodeInMath(node)){
-            if((0 < offset) && (offset < node.length)){
-                //here, escape sequence should applied into text//
-                
-                undo_man.Begin(node,offset);
-                InsertTextIntoText(text, node, offset);
-                undo_man.End(node,offset + text.length);
-                return;
-            }
-        }
-
-        const fragment = MD2DOM(text);        
-        InitializeMathInFragment(fragment, g_auto_numbering ? 1 : 0);
-        PasteTopLevelNodes(node, offset, fragment, event.currentTarget);
-
+    if(!event.clipboardData){
+        console.error("event.clipboardData is not defined");
+        return;
     }
+
+    
+    const text = event.clipboardData.getData("text/plain");
+    console.log(text);
+
+    const selection = document.getSelection();
+    if (!selection.isCollapsed) {
+        CorrectSelectionEdgeTable();
+        CutSelection(event.currentTarget, selection);
+    }
+
+    const [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
+    if(IsTextNodeInMath(node)){
+        if((0 < offset) && (offset < node.length)){
+            //here, escape sequence should applied into text//
+            
+            undo_man.Begin(node,offset);
+            InsertTextIntoText(text, node, offset);
+            undo_man.End(node,offset + text.length);
+            selection.collapse(node,offset + text.length);
+            return;
+        }
+    }
+
+    
+    const fragment = MD2DOM(ResolveNewlineCode(text));
+    InitializeMathInFragment(fragment, g_auto_numbering ? 1 : 0);
+    PasteTopLevelNodes(node, offset, fragment, event.currentTarget);
            
 }
 
@@ -95,10 +123,77 @@ function CutSelection(master_node, selection){
     if(selection.rangeCount === 0){return null;}
     
     const range = selection.getRangeAt(0);
-    const start_node = range.startContainer;
-    const start_offset = range.startOffset;
+    let start_node = range.startContainer;
+    let start_offset = range.startOffset;
     let end_node = range.endContainer;
     let end_offset = range.endOffset;
+
+
+    //correct focus in Table//
+    {
+        //left side of selection//
+        if(start_node.nodeType == Node.TEXT_NODE){
+            if((start_node.parentNode.nodeName == "TD") || (start_node.parentNode.nodeName == "TH")){
+                if(start_node === start_node.parentNode.lastChild){
+                    if(start_offset == start_node.length){
+                        if(start_node.parentNode.nextSibling){
+                            start_node = start_node.parentNode.nextSibling;
+                            start_offset = 0;
+                            if(start_node.firstChild.nodeType == Node.TEXT_NODE){
+                                start_node = start_node.firstChild;                                
+                            }
+                        }
+                    }
+                }        
+            }            
+        }
+        else if((start_node.nodeName == "TD") || (start_node.nodeName == "TH")){
+            if(start_offset == start_node.childNodes.length){
+                if(start_node.nextSibling){
+                    start_node = start_node.nextSibling;
+                    start_offset = 0;
+                    if(start_node.firstChild.nodeType == Node.TEXT_NODE){
+                        start_node = start_node.firstChild;                                
+                    }
+                }
+            }
+        }
+        
+
+        //right side of selection//
+        let shift_end = false;
+        if(end_node.nodeType == Node.TEXT_NODE){
+            if((end_node.parentNode.nodeName == "TD") || (end_node.parentNode.nodeName == "TH")){
+                if(end_node === end_node.parentNode.firstChild){
+                    if(end_offset == 0){
+                        if(end_node.parentNode.previousSibling){
+                            end_node = end_node.parentNode.previousSibling;
+                            if(end_node.lastChild.nodeType == Node.TEXT_NODE){
+                                end_node = end_node.lastChild;
+                                end_offset = end_node.length;
+                            }else{
+                                end_offset = end_node.childNodes.length;
+                            }
+                        }
+                    }
+                }        
+            }            
+        }
+        else if((end_node.nodeName == "TD") || (end_node.nodeName == "TH")){
+            if(end_offset == 0){
+                if(end_node.previousSibling){
+                    end_node = end_node.previousSibling;
+                    if(end_node.lastChild.nodeType == Node.TEXT_NODE){
+                        end_node = end_node.lastChild;
+                        end_offset = end_node.length;
+                    }else{
+                        end_offset = end_node.childNodes.length;
+                    }
+                }
+            }
+        }       
+
+    }
 
 
 
@@ -110,6 +205,15 @@ function CutSelection(master_node, selection){
         {//check in simple text node
             if((start_node) && (start_node === end_node)){
                 if(start_node.nodeType===Node.TEXT_NODE){
+                    if(IsTextNodeInMath(start_node)){
+                        const margin =  GetEditMarginByClassName(start_node.parentNode.className);
+                        if(start_offset < margin) start_offset = margin;
+                        if(end_offset > start_node.length - margin) end_offset = start_node.length - margin; 
+                        if(start_offset == end_offset){
+                            undo_man.Cancel();
+                            return null;
+                        }
+                    }
                     
                     if((start_offset === 0) && (end_offset===start_node.length)){
                         const parent = start_node.parentNode;
@@ -222,7 +326,7 @@ function CutSelection(master_node, selection){
     if(ref_end){
         focus = ConnectionNodeRecursive(ref_end);
     }else{
-        focus = SafeJunctionPoint(common_parent, ref_end);
+        focus = SafeTailPoint(common_parent);
     }
     let next_focus_node = focus.node;
     let next_focus_offset = focus.offset;

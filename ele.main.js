@@ -182,7 +182,8 @@ function createMenu() {
                     label: 'Cut..',
                     accelerator: 'CmdOrCtrl+X', //
                     click: (menuItem, browserWindow, event) => { 
-                        if(! event.triggeredByAccelerator){
+                        //if(! event.triggeredByAccelerator)
+                        {
                             browserWindow.webContents.cut();  //sending cut command//
                         }
                     } // 
@@ -192,7 +193,8 @@ function createMenu() {
                     label: 'Copy..',                    
                     accelerator: 'CmdOrCtrl+C', //
                     click: (menuItem, browserWindow, event) => { 
-                        if(! event.triggeredByAccelerator){
+                        //if(! event.triggeredByAccelerator)
+                        {
                             browserWindow.webContents.copy(); //sending copy command//
                         }
                     }
@@ -201,7 +203,8 @@ function createMenu() {
                     label: 'Paste..',
                     accelerator: 'CmdOrCtrl+V', //
                     click: (menuItem, browserWindow, event) => { 
-                        if(! event.triggeredByAccelerator){
+                        //if(! event.triggeredByAccelerator)
+                        {
                             browserWindow.webContents.paste();  //sending paste command//
                         }
                     }
@@ -295,6 +298,32 @@ function createMenu() {
                         // ChromiumのDevツールを開く
                         console.log("dev tools");
                         mainWindow.webContents.openDevTools(); 
+                    }
+                },
+                {
+                    label: 'appData',
+                    click: (menuItem, browserWindow, event) =>{
+                        dialog.showMessageBox(browserWindow, {
+                            type: "info",
+                            buttons: ["OK"],
+                            title: "appData: data stored directory",
+                            message: "List of app.GetPath()",
+                            detail: "home: " + app.getPath("home") + "\n"
+                                 + "appData: " + app.getPath("appData") + "\n"
+                                 + "userData: " + app.getPath("userData") + "\n"
+                                 + "cache: " + app.getPath("cache") + "\n"
+                                 + "temp: " + app.getPath("temp") + "\n"
+                                 + "exe: " + app.getPath("exe") + "\n"
+                                 + "module: " + app.getPath("module") + "\n"
+                                 + "desktop: " + app.getPath("desktop") + "\n"
+                                 + "documents: " + app.getPath("documents") + "\n"
+                                 + "downloads: " + app.getPath("downloads") + "\n"
+                                 + "music: " + app.getPath("music") + "\n"
+                                 + "pictures: " + app.getPath("pictures") + "\n"
+                                 + "videos: " + app.getPath("videos") + "\n"
+                                 + "logs: " + app.getPath("logs") + "\n",
+                            icon: nowtype_icon
+                        });
                     }
                 },
                 {type: 'separator'},

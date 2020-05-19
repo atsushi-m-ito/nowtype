@@ -49,7 +49,7 @@ function NT_Initialize(target_div_id, ime_type) {
         render_div.addEventListener("contextmenu", EDGE_OnContextmenuForIME, false);//cancel during IME//
         */
         //key event without IME//
-        render_div.addEventListener("keydown", OnKeydownForNavigationEditing, false);
+        render_div.addEventListener("keydown", OnKeydownForNavigation, false);
         render_div.addEventListener("keydown", OnKeydownForAsciiChar, false);
         render_div.addEventListener("keyup", OnKeyup, false);        
         break;
@@ -72,7 +72,7 @@ function NT_Initialize(target_div_id, ime_type) {
         render_div.addEventListener("keydown", CHRM_OnKeydownForIME, false);
         */
         //key event without IME//
-        render_div.addEventListener("keydown", OnKeydownForNavigationEditing, false);
+        render_div.addEventListener("keydown", OnKeydownForNavigation, false);
         render_div.addEventListener("keydown", OnKeydownForAsciiChar, false);
         render_div.addEventListener("keyup", OnKeyup, false);
         break;
@@ -91,7 +91,7 @@ function NT_Initialize(target_div_id, ime_type) {
         render_div.addEventListener("keydown", CHRM_OnKeydownForIME, false);
 */
         //key event without IME//
-        render_div.addEventListener("keydown", OnKeydownForNavigationEditing, false);
+        render_div.addEventListener("keydown", OnKeydownForNavigation, false);
         render_div.addEventListener("beforeinput", OnBeforeinputForAsciiChar, false);
         render_div.addEventListener("keyup", OnKeyup, false);
         nt_is_MacOS = true;
@@ -112,7 +112,7 @@ function NT_Initialize(target_div_id, ime_type) {
         
         
         //key event without IME//
-        render_div.addEventListener("keydown", SAFARI_OnKeydownForNavigationEditing, false);
+        render_div.addEventListener("keydown", SAFARI_OnKeydownForNavigation, false);
         render_div.addEventListener("beforeinput", OnBeforeinputForAsciiChar, false);
         render_div.addEventListener("keyup", OnKeyup, false);
         nt_is_MacOS = true;
@@ -131,7 +131,7 @@ function NT_Initialize(target_div_id, ime_type) {
         render_div.addEventListener("compositionend", FF_OnCompositionend, false);
         */
         //key event without IME//
-        render_div.addEventListener("keydown", OnKeydownForNavigationEditing, false);
+        render_div.addEventListener("keydown", OnKeydownForNavigation, false);
         render_div.addEventListener("keydown", OnKeydownForAsciiChar, false);
         render_div.addEventListener("keyup", OnKeyup, false);
         if(ime_type===IME_TYPE.MAC_FIREFOX){
@@ -144,8 +144,9 @@ function NT_Initialize(target_div_id, ime_type) {
     render_div.addEventListener("cut", OnCut, false);
     render_div.addEventListener("copy", OnCopy, false);
     render_div.addEventListener("paste", OnPaste, false);
-    //render_div.addEventListener("click", OnClickMath, false);
-    document.addEventListener("click", OnClickMath, false);   //document is necessary to handle mouseup at the out of windows//
+    document.addEventListener("click", OnClick, false);   //document is necessary to handle mouseup at the out of windows//
+    render_div.addEventListener("mousedown", OnMouseDownTable, false);   //document is necessary to handle mouseup at the out of windows//
+    render_div.addEventListener("mousemove", OnMouseMoveTable, false);   //document is necessary to handle mouseup at the out of windows//
     render_div.parentNode.parentNode.addEventListener("scroll", OnScroll, {passive: true});
     window.addEventListener("resize", OnScroll, {passive: true});
     //undo/redo is not the event supported by browser//
@@ -184,7 +185,7 @@ function SAFARI_OnInputMarkingEnter(event){
 }
 
 
-function SAFARI_OnKeydownForNavigationEditing(event){
+function SAFARI_OnKeydownForNavigation(event){
     //cancel the Enter/Backspace/Delete keydown just after IME end//
     if(SAFARI_is_just_after_compositionend){
         SAFARI_is_just_after_compositionend = false;
@@ -196,7 +197,7 @@ function SAFARI_OnKeydownForNavigationEditing(event){
         }
     }
     
-    OnKeydownForNavigationEditing(event);
+    OnKeydownForNavigation(event);
     return;
 }
 

@@ -54,10 +54,10 @@ function OnKeydownForShortcut(event) {
             {
                 
                 if(nt_prevent_shortcut.includes(shortcut_key)){    
-                    console.log("prevent: default short cut");                      
+                    console.log("prevent: default short cut");
                     event.preventDefault();
                 }else{
-                    console.log("through: default short cut");  
+                    console.log("through: default short cut");
                 }
             }
         }

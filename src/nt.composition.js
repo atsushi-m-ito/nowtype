@@ -67,7 +67,7 @@ function OnCompositionstart(event){
 
             }*/
 
-        
+            CorrectSelectionEdgeTable();
             CutSelection(event.currentTarget, selection);
         }
     }

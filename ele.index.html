@@ -30,21 +30,20 @@
 
     <script>
         "use strict";
-
-
-        
         
 
         let css_mode = 0;
         function TestChageCSS(){
             let main_css = document.getElementById("main_css");
-            
-            if (css_mode === 0){
-                main_css.href = "./style/udgothic.css";
-            }else{
+            ++css_mode;
+            switch (css_mode){
+            case 1: main_css.href = "./style/yumincho.css"; break;
+            case 2: main_css.href = "./style/udgothic.css"; break;
+            default:
                 main_css.href = "./style/notoserif.css";
+                css_mode = 0;
             }
-            css_mode = 1 - css_mode;
+            
             console.log("css-file: ",main_css.href);
         }
 
@@ -123,6 +122,7 @@
     <script src="./src/nt.math_switch.js"></script>
     <script src="./src/nt.key.shortcut.js"></script>
     <script src="./src/nt.key_binding.js"></script>
+    <script src="./src/nt.select_table.js"></script>
     <script src="./src/nt.composition.js"></script>
     <script src="./src/nt.composition.edge.js"></script>
     <script src="./src/nt.composition.chrome.js"></script>

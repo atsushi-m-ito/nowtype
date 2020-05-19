@@ -4,7 +4,16 @@ const nt_SPACE_FOR_LIST = "  ";
 
 function DOM2MD(target_node){
     const list_rank = 0;
-    return MdFromChildNodes(target_node, list_rank);
+    const md_text = MdFromChildNodes(target_node, list_rank);
+
+    //triming//
+    let offset = 0;
+    while(offset < md_text.length){
+        if(md_text.charAt(offset) !='\n' ) break;
+        offset ++;
+    }
+
+    return md_text.slice(offset);
 }
 
 function MdFromChildNodes(parent, list_rank){
@@ -217,19 +226,29 @@ function MdFromNode(node, list_rank){
             let text = (node.previousSibling) ? "\n" : "";
 
             for(let tr = node.firstChild; tr; tr = tr.nextSibling){
-                text += "|";
-                for(let td = tr.firstChild; td; td = td.nextSibling){
-                    let text_in_id = MdFromChildNodes(td, 0);
-                    if(text_in_id[text_in_id.length-1]==='\n') {
-                        text += text_in_id.slice(0,text_in_id.length-1) + "|";
-                    }else{
-                        text += text_in_id + "|";
-                    }
-                }
-                text += "\n";
+                text += MdFromNode(tr, 0);
             }
 
             return text;// + "\n"; 
+        }
+    case "TR":
+        {
+            let text = "|";
+            for(let td = node.firstChild; td; td = td.nextSibling){
+                let text_in_id = MdFromNode(td, 0);
+                if(text_in_id[text_in_id.length-1]==='\n') {
+                    text += text_in_id.slice(0,text_in_id.length-1) + "|";
+                }else{
+                    text += text_in_id + "|";
+                }
+            }
+            text += "\n";
+            return text;// + "\n"; 
+        }
+    case "TH":
+    case "TD":
+        {
+            return MdFromChildNodes(node, 0);
         }
     }
 

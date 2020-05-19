@@ -115,3 +115,30 @@ function ReplaceLinebreakToSpaceForJP(text_org){
     result += text_org.slice(offset);
     return result;
 }
+
+function ResolveNewlineCode(text_org){
+    const before_word = '\r';
+    const after_word = '\n';
+    
+    
+    let offset = 0;
+    let i = text_org.indexOf(before_word, offset);
+    if(i < 0) return text_org;
+
+    let result = "";
+
+    while(i >= 0){
+        result += text_org.slice(offset, i) + '\n';
+
+        if(text_org.charAt(i+1) == '\n'){
+            offset = i+2;
+        }else{
+            offset = i+1;
+        }
+        
+        i = text_org.indexOf(before_word, offset);
+    }
+
+    result += text_org.slice(offset);
+    return result;
+}

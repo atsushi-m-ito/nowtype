@@ -51,7 +51,7 @@ var UR_TYPE = {
     NONE: 0,
     INSERT_TEXT_INTO_TEXT: 1,
     DELETE_IN_TEXT: 101,
-    BACKSPACE_IN_TEXT: 102,
+    
     DIVIDE_TEXT_NODE: 202,
     ADD_NODE: 1001,
     ADD_TEXT_NODE: 1002,    
@@ -246,9 +246,6 @@ function ExecUndo() {
             case UR_TYPE.DELETE_IN_TEXT:
                 UndoDeleteText(ope);
                 break;
-            case UR_TYPE.BACKSPACE_IN_TEXT:
-                UndoBackspaceText(ope);
-                break;
             case UR_TYPE.DIVIDE_TEXT_NODE:
                 UndoDivideTextNode(ope);
                 break;
@@ -269,13 +266,15 @@ function ExecUndo() {
         
     }
 
-    if((history.selectionBefore.focusNode === history.selectionBefore.anchorNode) &&
+    if(history.selectionBefore.focusOffset == NT_SELECT_CELL_MODE){
+        SetSelectTable(history.selectionBefore.anchorNode, history.selectionBefore.focusNode);
+    }else if((history.selectionBefore.focusNode === history.selectionBefore.anchorNode) &&
         (history.selectionBefore.focusOffset === history.selectionBefore.anchorOffset)){
         document.getSelection().collapse(history.selectionBefore.focusNode, history.selectionBefore.focusOffset);
     }else{
         document.getSelection().setBaseAndExtent(
             history.selectionBefore.anchorNode, history.selectionBefore.anchorOffset,
-            history.selectionBefore.focusNode, history.selectionBefore.focusOffset);
+            history.selectionBefore.focusNode, history.selectionBefore.focusOffset);        
     }
     CheckEditPreview(null, true);
     undo_man.GetChangeEventDispatcher().Dispatch();
@@ -307,9 +306,6 @@ function ExecRedo() {
             case UR_TYPE.DELETE_IN_TEXT:
                 RedoDeleteText(ope);
                 break;
-            case UR_TYPE.BACKSPACE_IN_TEXT:
-                RedoBackspaceText(ope);
-                break;
             case UR_TYPE.DIVIDE_TEXT_NODE:
                 RedoDivideTextNode(ope);
                 break;
@@ -330,7 +326,9 @@ function ExecRedo() {
     }
 
     
-    if((history.selectionAfter.focusNode === history.selectionAfter.anchorNode) &&
+    if(history.selectionAfter.focusOffset == NT_SELECT_CELL_MODE){
+        SetSelectTable(history.selectionAfter.anchorNode, history.selectionAfter.focusNode);
+    }else if((history.selectionAfter.focusNode === history.selectionAfter.anchorNode) &&
         (history.selectionAfter.focusOffset === history.selectionAfter.anchorOffset)){
             document.getSelection().collapse(history.selectionAfter.focusNode, history.selectionAfter.focusOffset);
     }else{
@@ -1030,7 +1028,7 @@ function SafeJunctionPoint(parent, ref){
 
     //here, former is TEXT//
     if(former.nodeType !== Node.TEXT_NODE){
-        console.log("ERROR: unexpect adjacent node(2)", former.nodeName, latter.nodeName);
+        console.log("ERROR: unexpect adjacent node(2)", former.nodeName);
         
     }
 
@@ -1052,8 +1050,14 @@ function SafeHeadPoint(parent){
     const head = parent.firstChild;
     
     if(head === null){
+        if(parent.nodeName=="DIV"){
+            const p = AddNode("P", parent, null);
+            AddNode("BR", p, null);
+            return {node: p, offset:0};
+        }else{        
         AddNode("BR", parent, null);
         return {node: parent, offset:0};
+        }
     }
     
     if(head.nodeName == "BR"){        
@@ -1073,12 +1077,14 @@ function SafeHeadPoint(parent){
         AddNode("BR", parent, head);
         return {node: parent, offset:0};
     }
-    if(head.nodeType !== Node.TEXT_NODE){
-        console.log("ERROR: unexpect adjacent node", head.nodeName);
+    if(head.nodeType == Node.TEXT_NODE){
+        return {node: head, offset:0};
+        
     }
 
-    //here, head is TEXT
-    return {node: head, offset:0};
+    //here, tail is P, Table, and unexpect node//
+    console.log("HINT: unexpect head node", head.nodeName);
+    return SafeHeadPoint( head);
 }
 
 
@@ -1086,8 +1092,14 @@ function SafeTailPoint(parent){
     const tail = parent.lastChild;
     
     if(tail === null){
-        AddNode("BR", parent, null);
-        return {node: parent, offset:0};
+        if(parent.nodeName=="DIV"){
+            const p = AddNode("P", parent, null);
+            AddNode("BR", p, null);
+            return {node: p, offset:0};
+        }else{
+            AddNode("BR", parent, null);
+            return {node: parent, offset:0};
+        }
     }
     if(tail.nodeName == "BR"){
         if(tail.previousSibling){
@@ -1106,12 +1118,15 @@ function SafeTailPoint(parent){
     if(tail.nodeName === "FIGCAPTION"){
         return SafeTailPoint(tail);
     }
-    if(tail.nodeType !== Node.TEXT_NODE){
-        console.log("ERROR: unexpect adjacent node", tail.nodeName);
+    if(tail.nodeType == Node.TEXT_NODE){
+        return {node: tail, offset:tail.length};
     }
 
-    //here, tail is TEXT
-    return {node: tail, offset:tail.length};
+    //console.log("ERROR: unexpect adjacent node", tail.nodeName);
+    
+    //here, tail is P, Table, and unexpect node//
+    console.log("HINT: unexpect tail node", tail.nodeName);
+    return SafeTailPoint( tail);
 }
 
 

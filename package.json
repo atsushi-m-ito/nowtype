@@ -1,20 +1,23 @@
 {
-  "name": "nowtype",
-  "version": "0.3.28",
+  "name": "NowType",
+  "version": "0.4.1",
   "description": "NowType is a markdown editor",
   "main": "ele.main.js",
   "devDependencies": {
     "electron": "^8.2.3",
     "electron-builder": "^22.5.1",
-    "terser": "^4.6.11"
+    "electron-windows-store": "^2.1.0",
+    "terser": "^4.6.13"
   },
   "scripts": {
     "start": "electron .",
     "build": "electron-builder -w --x64",
+    "build-appx": "electron-builder -w appx --config dist/appx_setting.json && echo \"please exec by Power Shell: appx_sign.ps1 dist\\appname.appx\"",
     "build-portable": "electron-builder -w portable --x64",
     "build-mac": "electron-builder -m",
     "build-linux": "electron-builder -l deb rpm",
-    "minify": "terser -o nowtype.min.js -c drop_console=true ./src/nt.*.js"
+    "minify": "terser -o nowtype.min.js -c drop_console=true ./src/nt.*.js",
+    "minify-dev": "terser -o nowtype.min.js ./src/nt.*.js"
   },
   "author": {
     "name": "Atsushi M. Ito",

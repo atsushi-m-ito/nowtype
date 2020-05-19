@@ -24,8 +24,35 @@ Accsess by math.dataset.eqnumberBegin, and math.dataset.eqnumberEnd, respectivel
 let g_editable_math = null;
 let g_auto_numbering = true;
 
+function OnClick(event){
+    if(nt_selected_cell) return false;
+
+    if(!CorrectSelectionEdgeTable()){
+        event.preventDefault();
+        return false;
+    }
+
+    if(event.shiftKey && event.ctrlKey){
+        //select whole table //
+        const node  = document.elementFromPoint(event.clientX, event.clientY);
+        const td = CheckNodeInTD(node, nt_render_div);
+        if(td){
+            const table = td.parentNode.parentNode;
+            const parent = table.parentNode;
+            event.preventDefault();
+            const index = GetIndex(parent, table);
+            document.getSelection().setBaseAndExtent(parent, index, parent, index+1);
+            return false;
+        }
+    }
+
+    OnClickMath(event); 
+}
+
+
 function OnClickMath(event){
     const selection = document.getSelection();
+    
 
     let clicked_node  = document.elementFromPoint(event.clientX, event.clientY);
     let focus_math = CheckNodeInClass(clicked_node,"math", nt_render_div);
@@ -86,7 +113,7 @@ function OnClickMath(event){
 }
 
 /*
-(1)check the surrent focus is in the math.
+(1)check the current focus is in the math.
 (2)When the math node has the focus, 
 (2.1) if the math node is already edit, return null.
 (2.2) else if the math node is not edit, 

@@ -13,7 +13,7 @@ function NT_SetMarkdown(md_text){
     
     console.log("create dom")
     
-    const fragment = MD2DOM(md_text);
+    const fragment = MD2DOM(ResolveNewlineCode(md_text));
     InitializeMathInFragment(fragment, g_auto_numbering ? 1 : 0);
     
     console.log("set DOM")

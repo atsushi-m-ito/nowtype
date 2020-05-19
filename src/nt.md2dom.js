@@ -3,9 +3,13 @@
  * Translate from markdown(text) to HTML(DOM)
  **********************************************/
 
+ /*
+ text_buffer should be resolved for return code by using ResolveNewlineCode();
+ */
 function MD2DOM(text_buffer){
     
-    text_buffer = ReplaceAll(ReplaceAll(ReplaceAll(text_buffer, "\r\n", "\n"), "\r", "\n"), "\t", "    ");
+    //text_buffer = ReplaceAll(ReplaceAll(ReplaceAll(text_buffer, "\r\n", "\n"), "\r", "\n"), "\t", "    ");
+    text_buffer = ReplaceAll(text_buffer, "\t", "    ");
     let parent = new DocumentFragment();
     //let offset = 0;
     
@@ -1277,6 +1281,7 @@ function PrepareTable(parent){
             const slb_offset = flb_node.data.indexOf('\n', flb_offset+1);
             const second_line = flb_node.data.slice(flb_offset + 1, (slb_offset<0)?flb_node.length : slb_offset);
             
+            if(!IsSecondLineOfTableMD(second_line)) continue;
             //checking second line, which are composed of "-:| " only.//
             for(let i = 0; i < second_line.length; ++i){
                 if("-:| ".indexOf(second_line[i]) < 0) continue;
@@ -1321,6 +1326,16 @@ function PrepareTable(parent){
                 
         }//end of if P//
     }
+}
+
+//checking second line, which are composed of "-:| " only.//
+function IsSecondLineOfTableMD(second_line){
+    for(let i = 0; i < second_line.length; ++i){
+        if("-:| ".indexOf(second_line[i]) < 0) return false;
+    }
+    if(second_line.indexOf('|') < 0) return false;
+    if(second_line.indexOf('-') < 0) return false;
+    return true;
 }
 
 function SplitLineToNodes(parent, symbol, tag_name){
