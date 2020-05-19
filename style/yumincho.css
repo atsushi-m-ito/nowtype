@@ -153,4 +153,12 @@ td{
     padding: 4px;
 }
 
+.selectcell{
+    border: solid 3px #111111;    
+    background-color: #88AAFF;   
+}
+
+.maincell{
+    background-color: #3388FF;    
+}
 

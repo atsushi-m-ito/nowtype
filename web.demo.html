@@ -20,7 +20,7 @@
 <div id="toolbar" style="position: fixed; top: 0px; left: 0px; margin: 0; width: 100%; height: 32px; background: #c0dcff">
     
     <a href="./index.html"><img src="./favicon.ico" width="32px" height="32px" style="display:inline;margin: 0px; padding: 0px; vertical-align: middle;" /></a>
-    <div class="version">ver. 0.3.34 (Web)</div>
+    <div class="version">ver. 0.4.1 (Web)</div>
     <input type="file" id="file_open" />
     <button type="button" class="intLink" name="save" onclick="TestSave();">Save (DL)</button>
     
@@ -183,8 +183,32 @@
 </script>
 
 <script src="./nowtype.min.js"></script>
+<!--
+<script src="./src/nt.dom_finder.js"></script>
+<script src="./src/nt.dom_operation.js"></script>
+<script src="./src/nt.math_switch.js"></script>
+<script src="./src/nt.key.shortcut.js"></script>
+<script src="./src/nt.key_binding.js"></script>
+<script src="./src/nt.select_table.js"></script>
+<script src="./src/nt.composition.js"></script>
+<script src="./src/nt.composition.edge.js"></script>
+<script src="./src/nt.composition.chrome.js"></script>
+<script src="./src/nt.composition.firefox.js"></script>
+<script src="./src/nt.composition.mutation.js"></script>
+<script src="./src/nt.debug.js"></script>
+<script src="./src/nt.copy_paste.js"></script>
+<script src="./src/nt.katex_auto_num.js"></script>
+<script src="./src/nt.init_math.js"></script>
+<script src="./src/nt.str_replace.js"></script>
+<script src="./src/nt.md2dom.js"></script>
+<script src="./src/nt.dom2md.js"></script>
+<script src="./src/nt.dom2tex.js"></script>
+<script src="./src/nt.init.js"></script>
+<script src="./src/nt.load_save.js"></script>
+<script src="./src/nt.dispatch.js"></script>
+-->
 
-<script src="./manual/web.manual.js"></script>
+
 
 <script>
 //<script type="module">
@@ -212,13 +236,13 @@
 
     NT_Initialize("render_div", ime_type);    
     
-    //NT_SetMarkdown(document.getElementById("render_div").textContent();
-    //NT_SetMarkdown(nt_web_manual_text);
+    
     fetch("./manual/manual.md").then(function(response) {
         return response.text();
     }).then(function(text) {        
         NT_SetMarkdown(text);
     }).catch(function(error){
+        console.log("WARNING: cannot load manual.md")
         NT_SetMarkdown("");
     });
 

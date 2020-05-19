@@ -147,12 +147,22 @@ tr:nth-child(even) {
 th{
     font-weight: normal;
     background-color:  #bbddff;
-    border: solid 1px #000000;
+    border: solid 1px #444444;
     padding: 4px;
 }
 td{
-    border: solid 1px #000000;
+    border: solid 1px #444444;
     padding: 4px;
 }
+
+.selectcell{
+    border: solid 3px #111111;    
+    background-color: #88AAFF;   
+}
+
+.maincell{
+    background-color: #3388FF;    
+}
+
 
 
