@@ -1,13 +1,14 @@
 {
   "name": "NowType",
-  "version": "0.4.1",
+  "version": "0.4.12",
   "description": "NowType is a markdown editor",
   "main": "ele.main.js",
   "devDependencies": {
-    "electron": "^8.2.3",
-    "electron-builder": "^22.5.1",
+    "electron": "^8.3.0",
+    "electron-builder": "^22.7.0",
     "electron-windows-store": "^2.1.0",
-    "terser": "^4.6.13"
+    "eslint": "^7.1.0",
+    "terser": "^4.7.0"
   },
   "scripts": {
     "start": "electron .",
@@ -32,7 +33,7 @@
       "target": "nsis"
     },
     "nsis": {
-      "oneClick": false
+      "oneClick": true
     },
     "mac": {
       "icon": "./icon.png"

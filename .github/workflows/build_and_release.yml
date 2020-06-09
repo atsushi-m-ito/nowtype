@@ -38,7 +38,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: "./dist/nowtype_setup*.exe"
+        files: "./dist/NowType_setup*.exe"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #    - uses: actions/upload-artifact@v1
@@ -73,8 +73,8 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          ./dist/nowtype_setup*.deb
-          ./dist/nowtype_setup*.rpm
+          ./dist/NowType_setup*.deb
+          ./dist/NowType_setup*.rpm
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -98,6 +98,6 @@ jobs:
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: ./dist/nowtype_setup*.dmg
+        files: ./dist/NowType_setup*.dmg
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

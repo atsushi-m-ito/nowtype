@@ -50,3 +50,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+-------------------------------------------------------------------------
+
+And, NowType uses the following Node.js and modules
+
+- Node.js
+- electron
+- electron-builder
+- electron-windows-store
+- tersor
+
+--------------------------------------------------------------------------
+
+As a CSS, NowType includes the following fonts
+
+- Google fonts
