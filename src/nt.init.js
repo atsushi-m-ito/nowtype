@@ -17,7 +17,7 @@ const IME_TYPE = {
 };
 
 
-let nt_render_div = null;　　//used for nt dispatch//
+let nt_render_div = null;//used for nt dispatch//
 let nt_is_MacOS = false;
 
 function NT_Initialize(target_div_id, ime_type) {

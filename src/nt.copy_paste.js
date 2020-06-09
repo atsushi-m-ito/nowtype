@@ -3,69 +3,112 @@
 
 
 function OnCut(event){
-    if(nt_selected_cell){ 
+    if(!event.clipboardData){
+        console.error("event.clipboardData is not defined");
+        return;
+    }
+    
+
+    if(IsTableSelectionMode()){ 
+        if(IsHighlightMode()){  
+            NT_HighlightClear();                        
+        }
         OnCutTable(event); 
         return;
     }
 
     console.log("fook cut on " + event.currentTarget);
     event.preventDefault();
+    
+    const selection = document.getSelection();
+    if(selection.isCollapsed) return;
+
+    let highlight_word = null;
+    if(IsHighlightMode()){                        
+        highlight_word = nt_highlight.Word;
+        NT_HighlightClear();                        
+    }
+
+    CorrectSelectionEdgeTable();
+    
+    const fragment = CutSelection(event.currentTarget, selection);
+    if(fragment){
+
+        let md_text = DOM2MD(fragment);
+        event.clipboardData.setData("text/plain", md_text);
+        
+        console.log("copy to clipboard as markdown: " + md_text);
+    }
+
+    if(highlight_word){
+        NT_HighlightWord(highlight_word);
+    }
+}
+
+function OnCopy(event){
+    
     if(!event.clipboardData){
         console.error("event.clipboardData is not defined");
         return;
     }
 
-    CorrectSelectionEdgeTable();
-    const fragment = CutSelection(event.currentTarget, document.getSelection());
-    if(fragment===null) return;
-
-    let md_text = DOM2MD(fragment);
-    event.clipboardData.setData("text/plain", md_text);
     
-    let temp =  document.createElement("DIV");
-    temp.appendChild(fragment);        
-    console.log("copy to clipboard as html: " + temp.innerHTML);
 
-    console.log("copy to clipboard as markdown: " + md_text);
-           
-}
-
-function OnCopy(event){
-
-    if(nt_selected_cell){ 
+    if(IsTableSelectionMode()){ 
+        if(IsHighlightMode()){                        
+            NT_HighlightClear();                        
+        }
         OnCopyTable(event); 
         return;
     }
 
     console.log("fook copy on " + event.currentTarget);
     event.preventDefault();
-
-    if(!event.clipboardData){
-        console.error("event.clipboardData is not defined");
-        return;
+    const selection = document.getSelection();
+    if(selection.isCollapsed) return;
+    
+    let highlight_word = null;
+    if(IsHighlightMode()){                        
+        highlight_word = nt_highlight.Word;
+        NT_HighlightClear();                        
     }
-
     
     undo_man.GetChangeEventDispatcher().Disable();
     CorrectSelectionEdgeTable();
-    const fragment = CutSelection(event.currentTarget, document.getSelection());
+    const fragment = CutSelection(event.currentTarget, selection);
     if(fragment){
         ExecUndo();
         undo_man.Shrink();
     }        
     undo_man.GetChangeEventDispatcher().Enable();
-    if(fragment===null) return;
+    if(fragment){
 
-    const md_text = DOM2MD(fragment);
-    event.clipboardData.setData("text/plain", md_text);
-    
-    const temp =  document.createElement("DIV");
-    temp.appendChild(fragment);
-           
+        const md_text = DOM2MD(fragment);
+        event.clipboardData.setData("text/plain", md_text);
+        
+        const temp =  document.createElement("DIV");
+        temp.appendChild(fragment);
+    }
+          
+    if(highlight_word){
+        NT_HighlightWord(highlight_word);
+    }
 }
 
 function OnPaste(event){
-    if(nt_selected_cell){ 
+    if(!event.clipboardData){
+        console.error("event.clipboardData is not defined");
+        return;
+    }
+    
+    
+    let highlight_word = null;
+    if(IsHighlightMode()){                        
+        highlight_word = nt_highlight.Word;
+        NT_HighlightClear();                        
+    }
+
+    if(IsTableSelectionMode()){ 
         OnPasteTable(event); 
         return;
     }
@@ -73,10 +116,6 @@ function OnPaste(event){
     console.log("fook paste on " + event.currentTarget);
     event.preventDefault();
 
-    if(!event.clipboardData){
-        console.error("event.clipboardData is not defined");
-        return;
-    }
 
     
     const text = event.clipboardData.getData("text/plain");
@@ -97,6 +136,10 @@ function OnPaste(event){
             InsertTextIntoText(text, node, offset);
             undo_man.End(node,offset + text.length);
             selection.collapse(node,offset + text.length);
+                  
+            if(highlight_word){
+                NT_HighlightWord(highlight_word);
+            }
             return;
         }
     }
@@ -106,6 +149,10 @@ function OnPaste(event){
     InitializeMathInFragment(fragment, g_auto_numbering ? 1 : 0);
     PasteTopLevelNodes(node, offset, fragment, event.currentTarget);
            
+          
+    if(highlight_word){
+        NT_HighlightWord(highlight_word);
+    }
 }
 
 /***
@@ -578,9 +625,23 @@ function RecoveryPandFigure(node){
 function ConnectionNodeRecursive(ref_node){
     let focus = {node: ref_node, offset: 0};
     
+    if (ref_node.previousSibling===null) return focus;
+    if ((ref_node.nodeType == Node.TEXT_NODE) && (ref_node.previousSibling.nodeType == Node.TEXT_NODE)){
+        if(ref_node.data == nt_ZWBR){
+            RemoveNode(ref_node);
+            return {node: ref_node.previousSibling, offset: ref_node.previousSibling.length};
+        }else if (ref_node.previousSibling.data == nt_ZWBR){
+            RemoveNode(ref_node.previousSibling);
+            return focus;
+        }
+        focus = {node: ref_node.previousSibling, offset:ref_node.previousSibling.length}
+        InsertTextIntoText(ref_node.data, ref_node.previousSibling, ref_node.previousSibling.length);
+        RemoveNode(ref_node);
+        return focus;
+    }
 
     while(ref_node) {
-        const parent = ref_node.parentNode;
+        //const parent = ref_node.parentNode;
         if (ref_node.previousSibling===null) break;
         const prev = ref_node.previousSibling;
 

@@ -22,7 +22,7 @@ function OnKeydownForShortcut(event) {
         shortcut_key += (event.getModifierState("Shift") ? "Shift+" : "");
         shortcut_key += (event.key.length===1) ? event.key.toUpperCase() : event.key;
         //NOTE: in the EDGE(Legacy), when the Control is true, event.key is always lower case even if Shift is true."
-            
+        
         console.log(shortcut_key);
                 
         switch(shortcut_key){
@@ -62,13 +62,25 @@ function OnKeydownForShortcut(event) {
             }
         }
     } else {            
-        if (event.key === "F2") {
+        switch (event.key){
+            case "F3":{
+                
+                event.preventDefault();
+                if(event.getModifierState("Shift")){
+                    NT_Dispatch("findbackward");
+                }else{
+                    NT_Dispatch("findforward");
+                }
+                break;
+            }
+            case "F2": {
 
-            PrintFocus();
-            console.log("Undo history: " + undo_man.numHistory);
-            
-            event.preventDefault();
-            return ;
+                PrintFocus();
+                console.log("Undo history: " + undo_man.numHistory);
+                
+                event.preventDefault();
+                return ;
+            }
         }
     }
 }

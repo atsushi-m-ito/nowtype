@@ -7,6 +7,8 @@ let MO_IME_offset_origin = 0;
 let MO_update_list = [];
 let MO_observer = null;
 let MO_in_composition = false;
+let MO_highlight = null;
+let MO_update_parents = null;
 
 function MO_InitComposition(master_node){
     console.log("MutationObserver Create");
@@ -15,7 +17,7 @@ function MO_InitComposition(master_node){
     
 }
 
-function MO_OnCompositionChange(record_list){ 
+function MO_OnCompositionChange(record_list){
     
 
     if((MO_in_composition) || (MO_update_list.length > 0)){  // Here, (MO_update_list.length > 0) is for Chrome below //
@@ -31,8 +33,15 @@ function MO_OnCompositionChange(record_list){
                     }
                 }
                 if(new_target_update){
-                    MO_update_list.push({record:record, offset: GetIndex(record.target.parentNode, record.target)});
+                    const offset = GetIndex(record.target.parentNode, record.target);
+                    MO_update_list.push({record:record, offset:offset});
                     console.log("MutationObserver detect:",record.type,"\n", record.oldValue, "\nto\n", record.target);
+            
+                    //for highlight: parent is memorized for both add and remove//                    
+                    const parent = record.target.parentNode;
+                    MO_update_parents.add((parent.nodeName=="MARK")?parent.parentNode:parent);
+                    
+                    
                 }
             }else if(record.type==="childList"){
                 if(record.addedNodes.length>0){
@@ -40,6 +49,7 @@ function MO_OnCompositionChange(record_list){
                     MO_update_list.push({record:record, offset: offset});
                     console.log("MutationObserver detect: add\n", 
                         record.addedNodes.item(0), "\non offset=",offset,"\n", record.target);
+                    
                 }else{
                     //const offset = GetIndex(record.target, record.nextSibling);
                     const offset = (record.previousSibling === null) ? 0 : (GetIndex(record.target, record.previousSibling) + 1);
@@ -47,16 +57,23 @@ function MO_OnCompositionChange(record_list){
                     console.log("MutationObserver detect: remove\n", 
                         record.removedNodes.item(0), "\non offset=",offset,"\n", record.target);
                 }
+
+                //for highlight: parent is memorized for both add and remove//                    
+                MO_update_parents.add((record.nodeName=="MARK")?record.parentNode:record);
+                
             }
             
         });
     }
 
-    //for Chrome (case that the last MutationObserver just after compositionend by Delete/Bakspace key)//
+    //for Chrome (rollback when the last MutationObserver occurs just after compositionend by Delete/Bakspace key)//
     if((!MO_in_composition) && (MO_update_list.length > 0)){ 
         undo_man.GetChangeEventDispatcher().Disable();
         MO_RegisterIMEUpdate();
         //undo because DOM is broken by Chrome bug//
+        if(IsHighlightMode()){
+            NT_HighlightClear();
+        }
         ExecUndo();
         undo_man.Shrink();
         undo_man.GetChangeEventDispatcher().Enable();
@@ -67,8 +84,10 @@ function MO_OnCompositionstart(event){
     MO_in_composition = true;
     console.log("compositionstart: \"", event.data, "\"");
     MO_update_list.length = 0;//clear//
+    MO_highlight = nt_highlight;
+    MO_update_parents = new Set();
 
-    //br is automatically removed by IME input.
+    //br is automatically removed by IME input.//
     //then original br is kept before input IME//
     const selection = document.getSelection();
     if(selection.rangeCount === 0){event.currentTarget.blur();return false;}
@@ -81,6 +100,7 @@ function MO_OnCompositionstart(event){
     let anchor_offset = range.endOffset;
     
     if(focus_node.nodeType!==Node.TEXT_NODE){
+        console.log("focus(before refine): ", focus_node,  focus_offset); 
         [focus_node, focus_offset] = RefineFocusToText(focus_node, focus_offset);
     }
     if(anchor_node.nodeType!==Node.TEXT_NODE){
@@ -145,6 +165,7 @@ function MO_OnCompositionend(event){
     MO_in_composition = false;
 
     MO_RegisterIMEUpdate();
+    
 }
 
 
@@ -172,15 +193,26 @@ function MO_RegisterIMEUpdate(){
     let modified_text_list = [];
 
     let warning_math_list = [];
+
+    const selection = document.getSelection();
+
     
+    if(MO_highlight){
+        const org_focus = MO_highlight.OriginalFocus(MO_IME_node_origin, MO_IME_offset_origin);
+        undo_man.Begin(org_focus.node, org_focus.offset);
+        MO_highlight.RegisterUndo(MO_update_parents, undo_man);
+    }else{    
+        undo_man.Begin(MO_IME_node_origin, MO_IME_offset_origin);
+    }
+
+
+
     
-    undo_man.Begin(MO_IME_node_origin, MO_IME_offset_origin);
-    
-    MO_update_list.forEach( (record_offset) => {
-        const record = record_offset.record;
+    MO_update_list.forEach( (update_info) => {
+        const record = update_info.record;
         if(record.type==="characterData"){
             console.log("IME: regarded, replace all text data in the node");
-                        
+            
             undo_man.Register(UR_TYPE.DELETE_IN_TEXT, record.oldValue, record.target, 0, record.oldValue.length);
             undo_man.Register(UR_TYPE.INSERT_TEXT_INTO_TEXT, record.target.data, record.target, 0, record.target.length);
             modified_text_list.push(record.target);
@@ -188,7 +220,7 @@ function MO_RegisterIMEUpdate(){
         }else if(record.type==="childList"){
             if(record.addedNodes.length>0){
                 const parent = record.target;
-                let offset = record_offset.offset;
+                let offset = update_info.offset;
                 record.addedNodes.forEach( (node)=>{
                     console.log("IME: added node", node, ", offset=", offset);
                     undo_man.Register(UR_TYPE.ADD_NODE, node, parent, offset, 1);
@@ -200,7 +232,7 @@ function MO_RegisterIMEUpdate(){
                     // Then this text should be fixed //
                     if(parent.className=="math"){
                         warning_math_list.push(parent);
-                    }else if( parent.parentNode.className == "math"){
+                    }else if( (parent.parentNode) && (parent.parentNode.className == "math")){
                         if(node.nodeType != Node.TEXT_NODE){
                             warning_math_list.push(parent.parentNode);
                         }
@@ -210,7 +242,7 @@ function MO_RegisterIMEUpdate(){
             }
             else if(record.removedNodes.length>0){
                 const parent = record.target;
-                const offset = record_offset.offset;
+                const offset = update_info.offset;
                 record.removedNodes.forEach( (node)=>{
                     console.log("IME: removed node", node, ", offset=", offset);
                     undo_man.Register(UR_TYPE.REMOVE_NODE, node, parent, offset, 1);        
@@ -225,7 +257,7 @@ function MO_RegisterIMEUpdate(){
     });
 
 
-    const selection = document.getSelection();
+    
     if(selection.rangeCount===0){
         console.log("IME input is cancel: case 4 (by focus blur)");
         undo_man.End(null, 0);
@@ -309,17 +341,31 @@ function MO_RegisterIMEUpdate(){
     });
     */
 
-
-    let focus_node = document.getSelection().focusNode;
-    let focus_offset = document.getSelection().focusOffset;
-    if(focus_node.nodeType!==Node.TEXT_NODE){
-        [focus_node, focus_offset] = RefineFocusToText(focus_node, focus_offset);        
+    
+    let focus = {node:document.getSelection().focusNode, offset:document.getSelection().focusOffset};
+    if(focus.node.nodeType!==Node.TEXT_NODE){
+        [focus.node, focus.offset] = RefineFocusToText(focus.node, focus.offset);        
     }
 
-    undo_man.End(focus_node, focus_offset);
-    
+    if(MO_highlight){
+        
+        const org_end_focus = MO_highlight.ForceRepairWithRegister(MO_update_parents, focus.node, focus.offset);
+        if(org_end_focus) focus = org_end_focus;
+        undo_man.End(focus.node, focus.offset);
+        
+        MO_highlight.SearchIn(MO_update_parents);        
+        const hi_focus = MO_highlight.HighlightFocus(focus.node, focus.offset);
+        document.getSelection().collapse(hi_focus.node, hi_focus.offset);
+    }else{
+        undo_man.End(focus.node, focus.offset);
+    }
+
+
     MO_update_list.length = 0;//clear//
     modified_text_list.length = 0;//clear//
+
+    MO_update_parents = null;
+    
 ////////////////////////////////////////////////////////////
     
 
@@ -372,5 +418,26 @@ function MO_OnContextmenuForIME(event){
         event.preventDefault();
         event.stopImmediatePropagation();
     }
+}
+
+
+function RefineFocusToText(focus_node, focus_offset){
+    const ch = focus_node.childNodes.item(focus_offset);
+    if(ch){
+        if(ch.nodeType===Node.TEXT_NODE){
+            focus_node = ch;
+            focus_offset = 0;
+        }
+    }else{
+        const back = focus_node.childNodes.item(focus_offset-1);
+        if(back){
+            if(back.nodeType===Node.TEXT_NODE){
+                focus_node = back;
+                focus_offset = focus_node.length;
+            }
+        }
+    }
+
+    return [focus_node, focus_offset];
 }
 

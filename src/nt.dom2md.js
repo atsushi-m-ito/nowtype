@@ -250,6 +250,10 @@ function MdFromNode(node, list_rank){
         {
             return MdFromChildNodes(node, 0);
         }
+    case "MARK":
+        {
+            return MdFromChildNodes(node, 0);
+        }
     }
 
     alert("invalid node cannot be changed:"+ node.tagName);

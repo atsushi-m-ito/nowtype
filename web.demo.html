@@ -20,7 +20,7 @@
 <div id="toolbar" style="position: fixed; top: 0px; left: 0px; margin: 0; width: 100%; height: 32px; background: #c0dcff">
     
     <a href="./index.html"><img src="./favicon.ico" width="32px" height="32px" style="display:inline;margin: 0px; padding: 0px; vertical-align: middle;" /></a>
-    <div class="version">ver. 0.4.1 (Web)</div>
+    <div class="version">ver. 0.4.12 (Web)</div>
     <input type="file" id="file_open" />
     <button type="button" class="intLink" name="save" onclick="TestSave();">Save (DL)</button>
     
@@ -41,6 +41,7 @@
     <div id="modaltext" class="modaltext"><textarea></textarea></div>
 </div>    
 <div id="backbox" ><div id="paper"><div id="render_div" ></div></div></div>
+<div id="findbox" ><input id="findbox_input" name="findbox_input" type="search"/><button id="findbox_next" class="findbox_btn">↓</button><button id="findbox_prev" class="findbox_btn">↑</button><button id="findbox_close" class="findbox_btn">×</button></div>
 </body>
 
 <script>
@@ -179,21 +180,28 @@
         textarea.focus();
     }
         
+    
+    function ShowFindbox(b) {
+        const modal = document.getElementById(b);
+        modal.style.display = "block";        
+        const input = document.getElementById("findbox_input");
+        input.focus();
+    }
 
 </script>
 
+
 <script src="./nowtype.min.js"></script>
+
 <!--
-<script src="./src/nt.dom_finder.js"></script>
 <script src="./src/nt.dom_operation.js"></script>
 <script src="./src/nt.math_switch.js"></script>
 <script src="./src/nt.key.shortcut.js"></script>
 <script src="./src/nt.key_binding.js"></script>
 <script src="./src/nt.select_table.js"></script>
-<script src="./src/nt.composition.js"></script>
-<script src="./src/nt.composition.edge.js"></script>
-<script src="./src/nt.composition.chrome.js"></script>
-<script src="./src/nt.composition.firefox.js"></script>
+<script src="./src/nt.highlight.js"></script>
+<script src="./src/nt.finder.js"></script>
+
 <script src="./src/nt.composition.mutation.js"></script>
 <script src="./src/nt.debug.js"></script>
 <script src="./src/nt.copy_paste.js"></script>
@@ -263,15 +271,27 @@
     };
     
     
-    document.getElementById("render_div").addEventListener("keydown", OnSaveWeb, false);
-    function OnSaveWeb(event){
+    //document.getElementById("render_div").addEventListener("keydown", OnGlobalShortCut, false);
+    window.addEventListener("keydown", OnGlobalShortCut, false);
+    function OnGlobalShortCut(event){
         if(event.isComposing) return;
         if (event.getModifierState("Control") || event.getModifierState("Meta")){
-            if(event.key==="s"){
-                console.log("keydown ctrl+s on document");
-                TestSave();
-                event.preventDefault();
-                event.stopImmediatePropagation();
+            switch(event.key){
+            case "s":
+                {
+                    console.log("keydown ctrl+s on document");
+                    TestSave();
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    break;
+                }
+            case "f":
+                {
+                    ShowFindbox('findbox');
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    break;
+                }
             }
         }
     }
@@ -289,6 +309,92 @@
         document.body.removeChild(a);
     }
     
+    
+    
+    document.getElementById("findbox_input").addEventListener("keydown", OnEnterFindbox, false);
+    document.getElementById("findbox_input").addEventListener("input", OnInputFindbox, false);
+    
+    document.getElementById("findbox_close").addEventListener("click", OnCloseFindbox, false);        
+    document.getElementById("findbox_next").addEventListener("click", OnClickFindNext, false);        
+    document.getElementById("findbox_prev").addEventListener("click", OnClickFindPrev, false);
+    
+    function OnEnterFindbox(event){
+        if(event.type == "keydown"){
+            if(event.key == "Enter"){
+                event.preventDefault();
+                OnClickFindNext(event);
+            }
+        }        
+    }
+
+    function OnInputFindbox(event){
+        
+        const word = event.target.value;
+        if(word.length == 0){
+            NT_HighlightClear(false);
+            NT_FindAndSelect("");
+        }
+    }
+
+    function OnCloseFindbox(event){
+        const selection = document.getSelection();
+        if(!document.getElementById("render_div").contains(selection.focusNode)){
+            if(nt_last_focus){
+                selection.collapse(nt_last_focus.node, nt_last_focus.offset);
+            }
+        }
+
+        NT_HighlightClear(false);
+        NT_FindAndSelect("");
+        
+        CloseModal(event);
+    }
+
+    let nt_last_focus = null;
+    function OnFocusout(event){
+        const selection = document.getSelection();
+        if(selection.rangeCount>0){
+            nt_last_focus = {node: selection.focusNode, offset: selection.focusOffset};
+        }
+        
+    }
+    
+    function OnClickFindNext(event){
+        event.preventDefault();
+        const word = document.getElementById("findbox_input").value
+        console.log("search:", word);
+        if(word.length > 0){
+            const selection = document.getSelection();
+            if(!document.getElementById("render_div").contains(selection.focusNode)){
+                if(nt_last_focus){
+                    selection.collapse(nt_last_focus.node, nt_last_focus.offset);
+                }
+            }
+            
+            NT_HighlightWord(word, true);
+            NT_FindAndSelect(word);
+        }
+
+    }
+    function OnClickFindPrev(event){
+        
+        event.preventDefault();
+        const word = document.getElementById("findbox_input").value
+        console.log("search:", word);
+        if(word.length > 0){
+            const selection = document.getSelection();
+            if(!document.getElementById("render_div").contains(selection.focusNode)){
+                if(nt_last_focus){
+                    selection.collapse(nt_last_focus.node, nt_last_focus.offset);
+                }
+            }
+            
+            NT_HighlightWord(word, true);
+            NT_FindBackwardAndSelect(word);
+        }
+
+    } 
+
 </script>
 
 

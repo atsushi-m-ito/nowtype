@@ -18,13 +18,13 @@ contextBridge.exposeInMainWorld(
     "api", {
         send: (channel, data) => {
             // whitelist channels
-            const valid_channels = ["save_file_to_main","zoom","showcontextmenu","print_ready"];
+            const valid_channels = ["open_file_to_main","save_file_to_main","zoom","showcontextmenu","print_ready","file_updated"];
             if (valid_channels.includes(channel)) {
                 ipcRenderer.send(channel, data);
             }
         },
         on: (channel, func) => {
-            const valid_channels = ["open_file", "save_file","save_as","file_path","undo","redo","selectall","print_begin","print_end","showmarkdown","showhtml","showtex","changecss","mathnumbering","spellcheck"];
+            const valid_channels = ["open_success", "save_file","save_as","save_success","undo","redo","selectall","print_begin","print_end","showmarkdown","showhtml","showtex","changecss","mathnumbering","spellcheck","find"];
             if (valid_channels.includes(channel)) {
                 console.log("catch: ", channel);
                 

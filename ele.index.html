@@ -25,7 +25,8 @@
     <button id="modalclose" class="modalbutton" >Close</button>
     <button id="modalcopy" class="modalbutton" >Copy</button>
     <div id="modaltext" class="modaltext"><textarea></textarea></div>
-</div>    
+</div>
+<div id="findbox" ><input id="findbox_input" name="findbox_input" type="search"/><button id="findbox_next" class="findbox_btn">↓</button><button id="findbox_prev" class="findbox_btn">↑</button><button id="findbox_close" class="findbox_btn">×</button></div>
 </body>
 
     <script>
@@ -46,30 +47,6 @@
             
             console.log("css-file: ",main_css.href);
         }
-
-
-        //file read 
-        function TestFileOpen(file){
-            if (!(window.File && window.FileReader)) {
-                alert("FileAPI is not supported!!");
-                return false;
-            }
-
-            console.log("reading file: ", file.name);
-            
-            const reader = new FileReader();
-            reader.onload = function(){ 
-                
-                NT_SetFilePath(ele_nt_filepath);
-                NT_SetMarkdown(reader.result);
-            }
-
-            ele_nt_filepath = file.path;
-            console.log(ele_nt_filepath);
-            reader.readAsText(file);
-        }
-
-
 
         
         function ShowHTML(a, b) {
@@ -96,7 +73,7 @@
         
         function CloseModal(event){
             const modal = event.target.parentNode;
-            modal.style.display='none';
+            modal.style.display="none";
         }
         
         function CopyModal(event){
@@ -112,21 +89,30 @@
         }
         
         
+        function ShowFindbox(b) {
+            const modal = document.getElementById(b);
+            modal.style.display = "block";
+            const input = document.getElementById("findbox_input");
+            input.focus();
+        }
 
 
     </script>
 
 
-    <script src="./src/nt.dom_finder.js"></script>
     <script src="./src/nt.dom_operation.js"></script>
     <script src="./src/nt.math_switch.js"></script>
     <script src="./src/nt.key.shortcut.js"></script>
     <script src="./src/nt.key_binding.js"></script>
     <script src="./src/nt.select_table.js"></script>
+    <script src="./src/nt.highlight.js"></script>
+    <script src="./src/nt.finder.js"></script>
+    <!--
     <script src="./src/nt.composition.js"></script>
     <script src="./src/nt.composition.edge.js"></script>
     <script src="./src/nt.composition.chrome.js"></script>
     <script src="./src/nt.composition.firefox.js"></script>
+    -->
     <script src="./src/nt.composition.mutation.js"></script>
     <script src="./src/nt.debug.js"></script>
     <script src="./src/nt.copy_paste.js"></script>
@@ -182,13 +168,14 @@
 
 
     //Menu: File: Open//
-    window.api.on("open_file", (data) => {       
+    window.api.on("open_success", (data) => {
         console.log("filepath:", data.filepath);
         NT_SetFilePath(data.filepath);
         NT_SetMarkdown(data.markdown);
         ele_nt_filepath = data.filepath;
 
         NT_ResetChangeFlag();
+        nt_file_updated = false;
         document.title = FileNameFrom(ele_nt_filepath) + " - NowType";
     });
 
@@ -207,9 +194,13 @@
         );
 
         document.getElementById("savebar").classList.add("savesign");
-        NT_ResetChangeFlag();
-        document.title = FileNameFrom(ele_nt_filepath) + " - NowType";
 
+        //expect catch "save_success"//
+        /*
+        NT_ResetChangeFlag();
+        nt_file_updated = false;
+        document.title = FileNameFrom(ele_nt_filepath) + " - NowType";
+        */
     });
     
     //Menu: File: Save As//
@@ -230,6 +221,8 @@
                 extension: extension
             }
         );
+
+        
     });
 
     
@@ -240,49 +233,56 @@
 
 
     //Menu: File: Save &Save As, catch file path if new file is created//
-    window.api.on("file_path", (arg) => {        
-        if(arg.extension != "md") return;
-        ele_nt_filepath = arg.filepath;
+    window.api.on("save_success", (arg) => {
+        if(arg.extension == "md") {
+            ele_nt_filepath = arg.filepath;
 
-        NT_ResetChangeFlag();
-        document.title = FileNameFrom(ele_nt_filepath) + " - NowType";
+            NT_ResetChangeFlag();
+            nt_file_updated = false;
+            document.title = FileNameFrom(ele_nt_filepath) + " - NowType";
+        }
     });
     
     //Menu: Edit: Undo//
-    window.api.on("undo", () => {        
+    window.api.on("undo", () => {
         console.log("from main: undo");
         NT_Dispatch("undo");
     });
     
     //Menu: Edit: Redo//
-    window.api.on("redo", () => {        
+    window.api.on("redo", () => {
         console.log("from main: redo");
         NT_Dispatch("redo");
     });
     
     //Menu: Edit: Select All//
-    window.api.on("selectall", () => {        
+    window.api.on("selectall", () => {
         NT_Dispatch("selectall");
     });
     
+    window.api.on("find", () => {    
+        console.log("catch find");
+        ShowFindbox('findbox');
+    });
+    
     //Menu: View: Math Numbering//
-    window.api.on("mathnumbering", (arg) => {        
+    window.api.on("mathnumbering", (arg) => {
         NT_MathNumbering(arg.checked);
-    });    
+    });
 
     //Menu: View: Spellcheck//
-    window.api.on("spellcheck", (arg) => {        
+    window.api.on("spellcheck", (arg) => {
         document.getElementById("render_div").spellcheck = (arg.checked);
         console.log("spellcheck", document.getElementById("render_div").spellcheck );
-    });    
+    });
 
     //Menu: View: Change CSS//
-    window.api.on("changecss", () => {        
+    window.api.on("changecss", () => {
         TestChageCSS();
     });    
 
     //Menu: View: Show Markdown Text//
-    window.api.on("showmarkdown", () => {        
+    window.api.on("showmarkdown", () => {
         ShowMarkdown('modal1');
     });
     
@@ -309,6 +309,8 @@
         //document.getElementById("render_div").focus();
     });
 
+    let nt_file_updated = false;
+
     window.onload=(event)=>{
 
         console.log("window.onload");
@@ -318,6 +320,9 @@
         document.getElementById("render_div").addEventListener("nt_changed", (e)=>{
             console.log("nt_changed");
             document.title = FileNameFrom(ele_nt_filepath) + "* - NowType";            
+            nt_file_updated = true;
+            window.api.send("file_updated", true);
+
         });
         
 
@@ -325,7 +330,12 @@
         document.getElementById("backbox").addEventListener('drop', function(event){
             event.preventDefault();
             const file =event.dataTransfer.files[0];
-            TestFileOpen(event.dataTransfer.files[0]);
+
+            const extension = file.path.slice(-3);
+            if((extension==".md") || (extension==".MD")){
+                window.api.send("open_file_to_main", {filepath: file.path});
+            }
+
         },false);
 
         //the following "event.dataTransfer.dropEffect" is necessary to bring drop event//
@@ -338,8 +348,16 @@
         document.getElementById("modalclose").addEventListener("click", CloseModal, false);
         document.getElementById("modalcopy").addEventListener("click", CopyModal, false);
 
+        document.getElementById("findbox_input").addEventListener("keydown", OnEnterFindbox, false);
+        document.getElementById("findbox_input").addEventListener("input", OnInputFindbox, false);
+        
+        document.getElementById("findbox_close").addEventListener("click", OnCloseFindbox, false);        
+        document.getElementById("findbox_next").addEventListener("click", OnClickFindNext, false);        
+        document.getElementById("findbox_prev").addEventListener("click", OnClickFindPrev, false);
         
         document.getElementById("backbox").addEventListener("wheel", OnWheel, false);
+
+        document.getElementById("render_div").addEventListener("focusout", OnFocusout, false);
 
     };
 
@@ -351,7 +369,82 @@
         }
     }
 
+    function OnEnterFindbox(event){
+        if(event.type == "keydown"){
+            if(event.key == "Enter"){
+                event.preventDefault();
+                OnClickFindNext(event);
+            }
+        }        
+    }
 
+    function OnInputFindbox(event){
+        
+        const word = event.target.value;
+        if(word.length == 0){
+            NT_HighlightClear(false);
+            NT_FindAndSelect("");
+        }
+    }
+
+    function OnCloseFindbox(event){
+        const selection = document.getSelection();
+        if(!document.getElementById("render_div").contains(selection.focusNode)){
+            if(nt_last_focus){
+                selection.collapse(nt_last_focus.node, nt_last_focus.offset);
+            }
+        }
+
+        NT_HighlightClear(false);
+        NT_FindAndSelect("");
+        
+        CloseModal(event);
+    }
+
+    let nt_last_focus = null;
+    function OnFocusout(event){
+        const selection = document.getSelection();
+        if(selection.rangeCount>0){
+            nt_last_focus = {node: selection.focusNode, offset: selection.focusOffset};
+        }
+        
+    }
+    
+    function OnClickFindNext(event){
+        event.preventDefault();
+        const word = document.getElementById("findbox_input").value
+        console.log("search:", word);
+        if(word.length > 0){
+            const selection = document.getSelection();
+            if(!document.getElementById("render_div").contains(selection.focusNode)){
+                if(nt_last_focus){
+                    selection.collapse(nt_last_focus.node, nt_last_focus.offset);
+                }
+            }
+            
+            NT_HighlightWord(word, true);
+            NT_FindAndSelect(word);
+        }
+
+    }
+    function OnClickFindPrev(event){
+        
+        event.preventDefault();
+        const word = document.getElementById("findbox_input").value
+        console.log("search:", word);
+        if(word.length > 0){
+            const selection = document.getSelection();
+            if(!document.getElementById("render_div").contains(selection.focusNode)){
+                if(nt_last_focus){
+                    selection.collapse(nt_last_focus.node, nt_last_focus.offset);
+                }
+            }
+            
+            NT_HighlightWord(word, true);
+            NT_FindBackwardAndSelect(word);
+        }
+
+    }
 
 </script>
 

@@ -25,7 +25,8 @@ let g_editable_math = null;
 let g_auto_numbering = true;
 
 function OnClick(event){
-    if(nt_selected_cell) return false;
+    //here mouse down and move is called for Table selection mode//
+    if(IsTableSelectionMode()) return false;
 
     if(!CorrectSelectionEdgeTable()){
         event.preventDefault();
@@ -259,34 +260,27 @@ function DisableEdit(math, in_undo_redo = false){
             return {removed: false, focus:null};
 
         }else{
+            let highlight_word = null;                        ;
+            if(IsHighlightMode()){                        
+                highlight_word = nt_highlight.Word;
+                NT_HighlightClear();
+            }
+
             //remove math//            
             undo_man.Begin(text_node, margin);
             const parent = math.parentNode;
             //const offset = GetIndex(parent, math);
             const math_next = math.nextSibling;
             RemoveNode(math);
-            const focus = SafeJunctionPoint(parent, math_next);
-
-            /*
-            if(parent.nodeName==="P"){
-                if(IsSpanMathImg(parent.firstChild.nextSibling)){
-                    const figure = ConvertPtoFigure(parent);
-                    
-                    if(next_focus_node === null){                            
-                        const focus = EnableMathEdit(figure.firstChild, 2);
-                        next_focus_node = focus.node;
-                        next_focus_offset = focus.offset;
-                    }
-                }
-            }else if (parent.nodeName==="FIGURE"){
-                if(!IsSpanMathImg(parent.firstChild.nextSibling)){
-                    ConvertFiguretoP(parent);
-                }
-            }
-            */
-            
+            let focus = SafeJunctionPoint(parent, math_next);
             
             undo_man.End(focus.node, focus.offset);
+            document.getSelection().collapse(focus.node, focus.offset);
+            
+            if(highlight_word){
+                NT_HighlightWord(highlight_word);
+                focus = nt_highlight.HighlightFocus(focus.node, focus.offset);
+            }
             
             g_editable_math = null;
             return {removed: true, focus:focus}; // 

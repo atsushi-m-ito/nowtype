@@ -1464,7 +1464,6 @@ function PrepareZWBR2(parent){
         case "H5":
         case "H6":
         case "LI":
-        /*case "FIGURE":*/
         case "FIGCAPTION":
         case "TD":
         case "TH":

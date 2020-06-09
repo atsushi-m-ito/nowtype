@@ -4,6 +4,10 @@ let nt_selected_cell = null;
 let nt_anchor_cell = null;
 const NT_SELECT_CELL_MODE = -256;
 
+function IsTableSelectionMode(){
+    return !(nt_selected_cell===null);
+}
+
 function SwitchInputArrowLeftTable(node, offset) {
     if(!nt_selected_cell.previousSibling) return true;
 
@@ -107,11 +111,18 @@ function SwitchInputArrowDownTable(node, offset) {
     
 }
 
-
+/*
+This function should be called to finish table selection mode.
+*/
 function ReleaseTableSelectAll(){
     if(!nt_selected_cell ) return;
-    if(!nt_selected_cell.parentNode) return;
-    const table = nt_selected_cell.parentNode.parentNode;
+    const parent = nt_selected_cell.parentNode;
+    nt_selected_cell.classList.remove("maincell");
+    nt_selected_cell = null;
+    
+    if(!parent) return;
+    
+    const table = parent.parentNode;
     if(!table) return;
 
     table.childNodes.forEach((tr)=>{
@@ -119,6 +130,7 @@ function ReleaseTableSelectAll(){
             td.classList.remove("selectcell");
         });
     });    
+    
 }
 
 /*
@@ -178,8 +190,7 @@ function OnMouseDownTable(event){
         if(nt_selected_cell){
             //clear select cells//
             ReleaseTableSelectAll();
-            nt_selected_cell.classList.remove("maincell");
-            nt_selected_cell = null;  
+            
         }
         return true;
     }
@@ -344,8 +355,10 @@ function SetSelectTable(anchor_td, focus_td){
             //const focus = FocusOffsetZero(nt_selected_cell);
             //document.getSelection().collapse(focus.node, focus.offset);
             //document.getSelection().removeAllRanges();
-            document.getSelection().collapseToStart();
-            return true;                           
+            if(document.getSelection().rangeCount>0){
+                document.getSelection().collapseToStart();
+            }
+            return true;
         }
     }
     return false;
@@ -396,6 +409,12 @@ function FindTopNode(node, master){
 If edge(start/end) node is in table, the selection range is expande to the point before/after table.
 The return value is true if the selection range is not changed then, 
 while the return value is false if the selection range is expanded.
+
+This function is necessary for selection range is invalid
+in paticullar focus and anchor is in differennt table.
+For example the key inputs of ArrowUp and ArrowDown with Shift can bring 
+the invalid selection state.
+
 */
 function CorrectSelectionEdgeTable(){ //called before CutSelection//
     const selection = document.getSelection();
@@ -476,10 +495,9 @@ function OnKeydownForNavigationTable(event) {
                     if(focus_node.nodeType == Node.TEXT_NODE){
                         selection.collapse(focus_node, 0);
                     }else{
-                        selection.collapse(nt_selected_cell, 0);
+                        selection.collapse(focus_node.parentNode, 0);
                     }
-                    nt_selected_cell.classList.remove("maincell");
-                    nt_selected_cell = null;
+                    
                 }
                 
             }
@@ -496,14 +514,13 @@ function OnKeydownForNavigationTable(event) {
                     if(focus_node.nodeType == Node.TEXT_NODE){
                         selection.collapse(focus_node, focus_node.length);
                     }else{
-                        selection.collapse(nt_selected_cell, nt_selected_cell.childNodes.length);
+                        selection.collapse(focus_node.parentNode, focus_node.parentNode.childNodes.length);
                     }
-                    nt_selected_cell.classList.remove("maincell");
-                    nt_selected_cell = null;
+                    
                 }
                 
             }
-            break;          
+            break;
         case "ArrowLeft":
             {            
                 event.preventDefault();
@@ -515,10 +532,9 @@ function OnKeydownForNavigationTable(event) {
                     if(focus_node.nodeType == Node.TEXT_NODE){
                         selection.collapse(focus_node, 0);
                     }else{
-                        selection.collapse(nt_selected_cell, 0);
+                        selection.collapse(focus_node.parentNode, 0);
                     }
-                    nt_selected_cell.classList.remove("maincell");
-                    nt_selected_cell = null;
+                    
                 }
                 
             }
@@ -534,10 +550,9 @@ function OnKeydownForNavigationTable(event) {
                     if(focus_node.nodeType == Node.TEXT_NODE){
                         selection.collapse(focus_node, focus_node.length);
                     }else{
-                        selection.collapse(nt_selected_cell, nt_selected_cell.childNodes.length);
+                        selection.collapse(focus_node.parentNode, focus_node.parentNode.childNodes.length);
                     }
-                    nt_selected_cell.classList.remove("maincell");
-                    nt_selected_cell = null;
+                 
                 }
                 
             }
@@ -551,15 +566,20 @@ function OnKeydownForNavigationTable(event) {
         case "Backspace":
             {
                 event.preventDefault();
+
+                if(IsHighlightMode()){
+                    NT_HighlightClear();
+                }
+
                 //delete all in selected cell//
                 const range = RangeSelectedIndexes();
                 undo_man.Begin(nt_selected_cell, NT_SELECT_CELL_MODE, nt_anchor_cell, NT_SELECT_CELL_MODE);
                 DeleteSelectedCells(range);
+                undo_man.End(nt_selected_cell, 0);
                 selection.collapse(nt_selected_cell, 0);
                 ReleaseTableSelectAll();
-                nt_selected_cell.classList.remove("maincell");
-                nt_selected_cell = null;
-                undo_man.End(nt_selected_cell, 0);
+                
+                
             }
             break;
         case "Tab": 
@@ -660,11 +680,9 @@ function OnCutTable(event){
     undo_man.Begin(nt_selected_cell, NT_SELECT_CELL_MODE, nt_anchor_cell, NT_SELECT_CELL_MODE);
     DeleteSelectedCells(range);
     document.getSelection().collapse(nt_selected_cell, 0);
-    ReleaseTableSelectAll();
-    nt_selected_cell.classList.remove("maincell");
-    nt_selected_cell = null;
     undo_man.End(nt_selected_cell, 0);
-           
+    ReleaseTableSelectAll();
+               
 }
 
 function OnCopyTable(event){

@@ -462,6 +462,10 @@ function TexFromNode(node, list_rank){
           
             return text;// + "\n"; 
         }
+    case "MARK":
+        {
+            return TexFromChildNodes(node, 0);            
+        }
     }
 
     alert("invalid node cannot be changed:"+ node.tagName);

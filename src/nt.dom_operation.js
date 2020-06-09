@@ -135,6 +135,9 @@ class UndoManager {
 
     Cancel() {
         if (this.acceptable) {
+            if(this.begin_index_ope < this.index_operation){
+                alert("DOM operation is canceled but, DOM has been already changed."); 
+            }
             this.index_operation = this.begin_index_ope;
             this.acceptable = false;
         }

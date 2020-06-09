@@ -1,7 +1,7 @@
 "use strict";
 
 //type//
-const {BrowserWindow,Menu, app, ipcMain,dialog, nativeImage,shell} = require('electron');
+const {BrowserWindow,Menu, MenuItem, app, ipcMain,dialog, nativeImage,shell} = require('electron');
 const fs = require('fs');
 
 
@@ -11,9 +11,34 @@ let is_close_after_save = false;
 
 let context_menu = null;
 
+let nt_file_status = {is_updated: false};
+
+const user_setting_path = app.getPath("userData") + "/user.setting.json";
+let file_history = [];
+
 const CreateWindow = () => {
-    
-    mainWindow = new BrowserWindow({width: 1024, height: 768, 
+    const setting = ReadJSON(user_setting_path);
+    let width = 1024;
+    if(setting.window){
+        if(setting.window.width){
+            if(setting.window.width >= 400){
+               width = setting.window.width; 
+            }
+        }
+    }
+    let height = 768;
+    if(setting.window){
+        if(setting.window.height){
+            if(setting.window.height >= 320){
+                height = setting.window.height; 
+            }
+        }
+    }
+
+    mainWindow = new BrowserWindow({
+        width: width,
+        height: height, 
+        show: false,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -21,50 +46,62 @@ const CreateWindow = () => {
             spellcheck: true
         }            
     });
+    if(setting.window){ if(setting.window.startWithMaximized) mainWindow.maximize();}
+    mainWindow.show();
     
 
     mainWindow.on('closed', () =>{
         mainWindow = null;
     });
 
-    mainWindow.on("close", (event)=>{        
-        //if(document.title.indexOf('*')>=0)
-        {
-            const title = mainWindow.getTitle();
-            if(title.indexOf('*')>=0){
-                const res = dialog.showMessageBoxSync(mainWindow, 
-                    {
-                        type:"question",
-                        buttons: ["Yes", "No", "Cancel"],
-                        title: "Warning",
-                        message: "Your text has been editted. Do you save it?",
-                    }); 
-                if(res===2){
-                    event.preventDefault();
-                }else if(res===0){                    
-                    is_close_after_save=true;
-                    SaveFile();
-                    event.preventDefault();
+    /*
+    Important note: 
+    The callback function of "close" event should not be async function 
+    because an async function cannot stop to close of windows.
+    That is, window will be closed before perform preventDefault().
+    */
+    mainWindow.on("close", (event)=>{
+        console.log("catch close");
+        if(IsFileUpdated()){            
+            event.preventDefault();
+
+            //cannot use await because this function is not in async function//
+            asyncSaveOrNot().then((result)=>{
+                if(result==true){
+                    nt_file_status.is_updated = false;
+                    mainWindow.close(); //recall//
                 }
-            }
+            });            
+            return;
         }
+        
+        console.log("pass checking file save");
+
+        console.log("save setting");
+        SaveSetting();
+
+        console.log("end of close event");
     });
 
-    createMenu();
+    CreateMenu();
+    MenuByFileHistory(setting);//add recent file history//
+    
     context_menu = CreateContextMenu();
 
     mainWindow.webContents.once('did-finish-load',() =>{
-        console.log("show");
-        OpenInitialFile();
+        console.log("loaded");
         InitializeZoom();
+        console.log("zoom");        
+        OpenInitialFile();
     });
+    console.log("initialize 1");  
 
     nowtype_icon = nativeImage.createFromPath(__dirname + '/icon.png')
-    console.log(nowtype_icon);        
+    //console.log(nowtype_icon);        
     
-
     mainWindow.loadURL('file://' + __dirname + '/ele.index.html');
-    
+    console.log("initialize 2");  
+
 }
 
 app.on('ready', CreateWindow);
@@ -84,8 +121,50 @@ app.on('activate', () => {
     }
 })
 
-// メニューの作成
-function createMenu() {
+
+function IsFileUpdated(){
+    return nt_file_status.is_updated;
+}
+
+/*
+The return value is true if the user select "Yes" and the file is successfully saved or the user select "No" to advance without saving file,
+while the return value is false if the user select "Yes" and but the file is not saved or the user select "cancel".
+*/
+async function asyncSaveOrNot(){
+
+    const res = dialog.showMessageBoxSync(mainWindow, 
+        {
+            type:"question",
+            buttons: ["Yes", "No", "Cancel"],
+            title: "Warning",
+            message: "Your text has been editted. Do you save it?",
+        }); 
+    if(res==2){
+        console.log("User selects CANCEL.");
+        return false;
+    }else if(res==0){                    
+        
+        
+        console.log("call asyncSaveFile");            
+        const res2 = await asyncSaveFile();
+        if(res2==true){
+            console.log("User selects YES and the file is saved.");
+            return true;
+        }
+        console.log("User selects YES and but the file is not saved.");
+        return false;
+        
+    }else{ //without save//
+        console.log("User selects NO to advance without saving.");
+        return true;
+        
+    }
+
+}
+
+
+// create menu //
+function CreateMenu() {
     const template = [        
         {
             label: 'File',
@@ -96,7 +175,7 @@ function createMenu() {
                     click: (menuItem, browserWindow, event) => { 
                         //if(! event.triggeredByAccelerator)
                         {
-                            OpenFile(); 
+                            asyncOpenFile();
                         }
                     }                        
                 },
@@ -106,7 +185,7 @@ function createMenu() {
                     click: (menuItem, browserWindow, event) => { 
                         //if(! event.triggeredByAccelerator)
                         {
-                            SaveFile(); 
+                            asyncSaveFile(); 
                         }
                     } // 
                 },
@@ -114,9 +193,15 @@ function createMenu() {
                     label: 'Save As..',
                     click: (menuItem, browserWindow, event) => { 
                         if(! event.triggeredByAccelerator){
-                            SaveAs("md"); 
+                            asyncSaveAs("md"); 
                         }
                     } // 
+                },
+                {type: 'separator'},
+                {
+                    label: 'Recent Files..',
+                    id: "MenuID_FileHistory",
+                    submenu: []
                 },
                 {type: 'separator'},
                 {
@@ -137,7 +222,7 @@ function createMenu() {
                     enabled: false/*,
                     click: (menuItem, browserWindow, event) => {
                         if(! event.triggeredByAccelerator){
-                            SaveAs("html"); 
+                            asyncSaveAs("html"); 
                         }
                     }*/
                 },
@@ -145,7 +230,7 @@ function createMenu() {
                     label: 'Export LaTex',
                     click: (menuItem, browserWindow, event) => {
                         if(! event.triggeredByAccelerator){
-                            SaveAs("tex"); 
+                            asyncSaveAs("tex"); 
                         }
                     }
                 },
@@ -217,6 +302,14 @@ function createMenu() {
                         if(! event.triggeredByAccelerator){
                             MenuSimpleSend("selectall"); 
                         }
+                    } // 
+                },
+                {type: 'separator'},
+                {
+                    label: 'Find..',
+                    accelerator: 'CmdOrCtrl+F', //
+                    click: (menuItem, browserWindow, event) => { 
+                        MenuSimpleSend("find");                         
                     } // 
                 },
             ]
@@ -326,16 +419,15 @@ function createMenu() {
                         });
                     }
                 },
-                {type: 'separator'},
-                /*{
-                    label: 'Test..',
-                    accelerator: 'CmdOrCtrl+Q', 
-                    click: (menuItem, browserWindow, event) => { 
-                        // ChromiumのDevツールを開く
-                        console.log("ctrl + q: triggeredByAccelerator", event.triggeredByAccelerator );
-
+                {type: 'separator'},                
+                {
+                    label: 'Open setting (JSON)',
+                    click: (menuItem, browserWindow, event) =>{
+                        shell.openItem(user_setting_path);
+                        //shell.openPath(user_setting_path); //this will be used from electron v9//
                     }
-                },*/
+                },
+                {type: 'separator'},                
                 {
                     label: 'web site',
                     click: (menuItem, browserWindow, event) =>{
@@ -363,7 +455,7 @@ function createMenu() {
 }
 
 
-// メニューの作成
+// menu for right click //
 function CreateContextMenu() {
     const template = [
                 {
@@ -427,25 +519,86 @@ function CreateContextMenu() {
     return Menu.buildFromTemplate(template);
 }
 
-async function OpenFile() {
+
+
+// menu of recent files //
+function MenuByFileHistory(setting) {
+    
+    if(!setting.fileHistory) {
+        console.log("fileHistory is not found in", user_setting_path);
+        return null;
+    }
+    if(setting.fileHistory.length == 0){
+        console.log("fileHistory is empty in", user_setting_path);  
+        return null;
+    }
+                
+    
+    const main_menu = Menu.getApplicationMenu();
+    const menu_hist = main_menu.getMenuItemById("MenuID_FileHistory");
+    
+    for(let i = 0; i < setting.fileHistory.length; ++i){
+        const path = setting.fileHistory[i];
+        console.log("recent file:", path);
+        menu_hist.submenu.insert(0, new MenuItem({
+            label: path,
+            click: OnMenuRecentFile
+        }));
+    }
+    
+}
+
+
+
+ipcMain.on("open_file_to_main",(event, arg) => {
+    asyncOpenFile( arg.filepath );
+});
+
+async function OnMenuRecentFile(menuItem, browserWindow, event){
+    return asyncOpenFile(menuItem.label);
+}
+
+
+async function asyncOpenFile(filepath = null) {
     console.log("before open file");
     
-    // ファイル選択ダイアログを開く
-    const result = await dialog.showOpenDialog(mainWindow, 
-        {
-            properties: ['openFile'],
-            filters: [
-                {
-                    name: 'Markdown',
-                    extensions: ['md']
-                }
-            ] 
-        }  );
-    if(!result.canceled){
-        const filepath = result.filePaths[0];
-        //console.log("filePath:", result, filepath);
-        LoadFileAndSend(filepath)
+    if(IsFileUpdated()){
+        const res = await asyncSaveOrNot();
+        if(res!=true){
+            return;
+        }           
     }
+
+    if(filepath==null){
+        const result = await dialog.showOpenDialog(mainWindow, 
+            {
+                properties: ['openFile'],
+                filters: [
+                    {
+                        name: 'Markdown',
+                        extensions: ['md']
+                    }
+                ] 
+            }  );
+        if(!result.canceled){
+            filepath = result.filePaths[0];        
+        }else{
+            return;
+        }
+    }else if(!fs.existsSync(filepath)){
+        dialog.showMessageBoxSync(mainWindow, 
+            {
+                type:"info",
+                buttons: ["OK"],
+                title: "File is not found",
+                message: "The file does not already exist.",
+            }); 
+        
+        UpdateFileHistory(file_history, filepath, false);
+        return;
+    }
+
+    LoadFileAndSend(filepath);    
 }
 
 function LoadFileAndSend(filepath){
@@ -457,56 +610,76 @@ function LoadFileAndSend(filepath){
             return;
         }
 
-        // レンダラープロセスにイベントを飛ばす
-        mainWindow.webContents.send("open_file", 
+        mainWindow.webContents.send("open_success", 
             {
                 filepath: filepath,
                 markdown: data.toString()
             }
         ); 
+
+        nt_file_status.is_updated = false;
+        UpdateFileHistory(file_history, filepath);
+
     });      
 }
 
-function SaveFile(){
-    mainWindow.webContents.send("save_file");    
+function UpdateFileHistory(file_history, new_data, do_apend = true){
+    const index = file_history.indexOf(new_data);
+    if(index>=0){
+        file_history.splice(index,1);
+    }
+    if(do_apend){
+        file_history.push(new_data);
+    }
 }
 
-function SaveAs(extension){
-    mainWindow.webContents.send("save_as",extension);
+
+async function asyncSaveFile(){
+    mainWindow.webContents.send("save_file");
+    //will catch save_file_to_main message//
+    return asyncSaveFile2();
 }
 
-ipcMain.on("save_file_to_main", async (event, arg) => {
-    console.log("save: path = ", arg.filepath); // prints "ping"
-    console.log("data = ", arg.markdown.slice(0,10), " ... ", arg.markdown.slice(arg.markdown.length-10)); // prints "ping"
+async function asyncSaveFile2(){
+    console.log("begin of asyncSaveFile2");
 
-    if(fs.existsSync(arg.filepath)){
-        console.log("save: onto the file existing");
+    const arg1 = await new Promise((resolve, reject)=>{
+        ipcMain.once("save_file_to_main", (event, arg) => {
+            console.log("save: path = ", arg.filepath); // prints "ping"
+            console.log("data = ", arg.markdown.slice(0,10), " ... ", arg.markdown.slice(arg.markdown.length-10)); // prints "ping"
+            resolve(arg);
+        });
+    });
+    
+    const res = await asyncSaveFile3(arg1.filepath, arg1.markdown, arg1.extension);    
 
-        fs.writeFile(arg.filepath, arg.markdown, (error, data)=>{
-            if(error){
-                console.log("Error: invalid file open.");
-                //return;
-            }
-            if(is_close_after_save){
-                mainWindow.close();
-            }
-        });        
-    }else{
-        // ファイル選択ダイアログを開く
+    console.log("end of asyncSaveFile2");
+    return res;
+}
+
+async function asyncSaveAs(extension){
+    mainWindow.webContents.send("save_as", extension);
+    //will catch save_file_to_main message//
+    await asyncSaveFile2();
+}
+
+async function asyncSaveFile3(filepath, textdata, extension){
+    if(!fs.existsSync(filepath)){
+        // file is not exist, and then waiting input by user//
         const result = await dialog.showSaveDialog(mainWindow, 
             {
                 filters: [
-                    (arg.extension == 'md') ? 
+                    (extension == 'md') ? 
                     {
                         name: 'Markdown',
                         extensions: ['md']
                     }
-                    : (arg.extension == 'tex') ? 
+                    : (extension == 'tex') ? 
                     {
                         name: 'TeX',
                         extensions: ['tex']
                     }
-                    : (arg.extension == 'html') ? 
+                    : (extension == 'html') ? 
                     {
                         name: 'HTML',
                         extensions: ['html']
@@ -518,28 +691,55 @@ ipcMain.on("save_file_to_main", async (event, arg) => {
                     }
                 ]
             }  );
-        if(!result.canceled){
-            
-            fs.writeFile(result.filePath , arg.markdown, (error, data)=>{
-                if(error){
-                    console.log("Error: invalid file open.");
-                    //return;
-                }
-                if(is_close_after_save){
-                    mainWindow.close();
-                }
-            });
 
-            //rendererにファイル名を返す//
-            mainWindow.webContents.send("file_path", 
-                {
-                    filepath: result.filePath,
-                    extension: arg.extension
-                }
-            ); 
+        if(result.canceled){
+            console.log("save: cancel");
+            return false;            
         }
+
+        filepath = result.filePath;
     }
-});
+    
+    console.log("save: onto the file existing");
+
+
+    const res = await new Promise((resolve, reject)=>{
+        fs.writeFile(filepath , textdata, (error)=>{
+            if(error){
+                console.log("Error: invalid file open.");
+                reject(false);
+            }
+            resolve(true);
+        });
+    });
+
+    
+    if(res==true){
+        if(extension == "md"){
+            nt_file_status.is_updated = false;
+            UpdateFileHistory(file_history, filepath);
+        }
+        
+        //rendererにファイル名を返す//
+        mainWindow.webContents.send("save_success",
+            {
+                filepath: filepath,
+                extension: extension
+            }
+        );
+
+        console.log("actualy saved", filepath);
+
+        if(is_close_after_save){
+            mainWindow.close();
+        }
+        return true;
+    }
+
+    return false;
+
+}
+
 
 function OpenInitialFile(){
     //open file when the target file is indicated by argument //
@@ -547,12 +747,14 @@ function OpenInitialFile(){
     //check is this start as electron or app//
     let file_i_arg = 1;
     const winexename = "\\electron.exe";
-    if(process.argv[0].slice(process.argv[0].length - winexename.length)===winexename){
+    if(process.argv[0].slice(process.argv[0].length - winexename.length) == winexename){
         file_i_arg = 2;
     }
 
     if(process.argv.length > file_i_arg){
-        const filepath = process.argv[file_i_arg];
+        const path = require('path');
+        const filepath = path.resolve(process.argv[file_i_arg]);
+        //const filepath = path.resolve(process.argv[file_i_arg];
         console.log("argument file: ", filepath);
         if(fs.existsSync(filepath)){
             LoadFileAndSend(filepath);
@@ -560,8 +762,9 @@ function OpenInitialFile(){
     }
 }
 
+
 function MenuSimpleSend(command){
-    mainWindow.webContents.send(command);    
+    mainWindow.webContents.send(command);
 }
 
 
@@ -572,23 +775,23 @@ let zoom_level = zoom_level_init;
 function InitializeZoom(){    
     zoom_level = zoom_level_init;
     if(zoom_css_key){
-        UpdateZoomCSS();
+        asyncUpdateZoomCSS();
     }
 }
 
 function MenuZoomin(){
     
     if(zoom_level < zoom_list.length-1) zoom_level++;
-    UpdateZoomCSS();
+    asyncUpdateZoomCSS();
 }
 
 function MenuZoomout(){
     
     if(zoom_level >0 ) zoom_level--;
-    UpdateZoomCSS();
+    asyncUpdateZoomCSS();
 }
 
-async function UpdateZoomCSS(){
+async function asyncUpdateZoomCSS(){
     const css_word = "div#paper{transform: scale(" + zoom_list[zoom_level] + ");}";
     const old_key = zoom_css_key;
     zoom_css_key = await mainWindow.webContents.insertCSS(css_word);
@@ -603,12 +806,12 @@ ipcMain.on("zoom", async (event, arg) => {
     }else{
         if(zoom_level >0 ) zoom_level--;
     }
-    UpdateZoomCSS();
+    asyncUpdateZoomCSS();
 });
 
 
 
-async function MenuPrint(browserWindow, device){
+function MenuPrint(browserWindow, device){
     
     const wc = browserWindow.webContents;
     wc.send("print_begin", device);
@@ -661,3 +864,62 @@ ipcMain.on("print_ready", async (event, device) => {
 ipcMain.on("showcontextmenu", (event)=>{
     context_menu.popup();
 });
+
+
+const ReadJSON = (filepath) =>{
+    
+    console.log("open setting:", filepath);
+    if(fs.existsSync(filepath)){
+        console.log("exists");
+        const data = fs.readFileSync(filepath);
+        if(data){
+            return JSON.parse(data);
+        }               
+    }
+    return {};
+}
+
+
+
+
+const SaveSetting = () =>{
+    const setting = ReadJSON(user_setting_path);
+        
+    //windows size//
+    if((!mainWindow.isMaximized()) && (!mainWindow.isMinimized())){
+        const [width,height] = mainWindow.getSize();
+        setting.window = {width: width, height: height};
+    }
+    
+    setting.window.startWithMaximized = mainWindow.isMaximized() ? true : false;
+    
+
+    if(setting.fileHistory){        
+        while(file_history.length > 0){
+            const path = file_history.shift();
+            UpdateFileHistory(setting.fileHistory, path);
+        }
+    }else{
+        setting.fileHistory = file_history;
+    }
+    //shrink length of file history//
+    let file_history_limit = 20;
+    if(setting.fileHistoryLimit){
+        if(Number.isInteger(setting.fileHistoryLimit) ){
+            file_history_limit = Number(setting.fileHistoryLimit);
+        }
+    }
+    setting.fileHistoryLimit = file_history_limit;
+    if(setting.fileHistory.length > file_history_limit){
+        setting.fileHistory = setting.fileHistory.slice(setting.fileHistory.length-file_history_limit);
+    }
+    
+    fs.writeFileSync(user_setting_path , JSON.stringify(setting, null, "  "));
+    
+}
+
+
+ipcMain.on("file_updated", async (event, arg) => {
+    nt_file_status.is_updated = arg;
+});
+

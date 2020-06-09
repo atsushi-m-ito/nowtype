@@ -48,7 +48,7 @@ function OnKeydownForNavigation(event) {
         return;
     }
     
-    if(nt_selected_cell) {
+    if(IsTableSelectionMode()) {
         OnKeydownForNavigationTable(event);
         return;
     }
@@ -58,29 +58,32 @@ function OnKeydownForNavigation(event) {
     
     //without special keys//
     const selection = document.getSelection();
-    const [node,offset] = (selection.isCollapsed) ? CorrectFocusToText(selection.focusNode, selection.focusOffset)
+    let [node,offset] = (selection.isCollapsed) ? CorrectFocusToText(selection.focusNode, selection.focusOffset)
          : [selection.focusNode, selection.focusOffset];
     
 
     switch (event.key) {        
         case "ArrowUp":
-            {       
+            {
                 
                 const td = CheckNodeInTD(selection.focusNode, event.currentTarget);
                 if(td){
                     console.log("keydown Up, td: ",td);
                     if(event.getModifierState("Shift")){
+                        if(IsHighlightMode()){
+                            NT_HighlightClear();
+                        }
                         SetSelectTable(td,td);
                         event.preventDefault();
                     }else{
                         const res = SwitchInputArrowUp(td);
                         if(res){
-                            event.preventDefault();                            
+                            event.preventDefault();
                         }
                     }
                 }
             }
-            break;       
+            break;
         case "ArrowDown":
             {
                 
@@ -89,6 +92,9 @@ function OnKeydownForNavigation(event) {
                 if(td){
                     console.log("keydown Down, td: ",td);                    
                     if(event.getModifierState("Shift")){
+                        if(IsHighlightMode()){
+                            NT_HighlightClear();
+                        }
                         SetSelectTable(td,td);
                         event.preventDefault();
                     }else{
@@ -127,8 +133,21 @@ function OnKeydownForNavigation(event) {
                     }
                 }
 
-                if (selection.isCollapsed) {                    
+                if (selection.isCollapsed) {
+                    let highlight_word = null;
+                    if(IsHighlightMode()){                        
+                        highlight_word = nt_highlight.Word;
+                        NT_HighlightClear();                        
+                    }
+                    [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
+
                     SwitchInputEnter(node, offset, event.getModifierState("Shift"));
+
+                    
+                    if(highlight_word){
+                        NT_HighlightWord(highlight_word);
+                    }
+
                 }
                 
             }
@@ -144,12 +163,26 @@ function OnKeydownForNavigation(event) {
                         selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
                     }
                 }
+
+                let highlight_word = null;
+                if(IsHighlightMode()){                        
+                    highlight_word = nt_highlight.Word;
+                    NT_HighlightClear();                        
+                }
+                    
+
                 if (selection.isCollapsed) {
+                    [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
                     SwitchInputDelete(node, offset, event.getModifierState("Shift"));
                 }else{   
                     CorrectSelectionEdgeTable();                 
                     CutSelection(event.currentTarget, selection);
                 }
+
+                if(highlight_word){
+                    NT_HighlightWord(highlight_word);
+                }
+
                 
             }
             break;
@@ -164,13 +197,24 @@ function OnKeydownForNavigation(event) {
                         selection.focusNode.scrollIntoView({behavior: 'auto', block: 'nearest'});
                     }
                 }
+                
+                let highlight_word = null;
+                if(IsHighlightMode()){                        
+                    highlight_word = nt_highlight.Word;
+                    NT_HighlightClear();                        
+                }
+
                 if (selection.isCollapsed) {
+                    [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
                     SwitchInputBackspace(node, offset, event.getModifierState("Shift"));
                 } else{
                     CorrectSelectionEdgeTable();
                     CutSelection(event.currentTarget, selection);
                 }
                 
+                if(highlight_word){
+                    NT_HighlightWord(highlight_word);
+                }
 
             }
             break;
@@ -178,6 +222,13 @@ function OnKeydownForNavigation(event) {
             {
                 
                 event.preventDefault();
+                
+                let highlight_word = null;
+                if(IsHighlightMode()){                        
+                    highlight_word = nt_highlight.Word;
+                    NT_HighlightClear();                        
+                }
+
                 if(event.getModifierState("Shift")){
                     console.log("keydown fook: Shift + Tab, focus:" + offset); 
                     SwitchInputShiftTab(node, offset);   
@@ -185,6 +236,10 @@ function OnKeydownForNavigation(event) {
                     console.log("keydown fook: Tab, focus:" + offset);
                     SwitchInputTab(node, offset);
                 }                
+                
+                if(highlight_word){
+                    NT_HighlightWord(highlight_word);
+                }
             }
             break;
         }
@@ -207,11 +262,10 @@ function OnKeydownForAsciiChar(event) {
 }
 
 function TryInputAsciiChar(char) {
-    if(nt_selected_cell) return false;
+    if(IsTableSelectionMode()) return false;
     
     //without special keys//
     const selection = document.getSelection();
-    let [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
     
 
     switch (char) {        
@@ -221,25 +275,46 @@ function TryInputAsciiChar(char) {
         case '_':    // insert string and em node//
         //case '[':    insert a and figure //
             {  // insert math node//
+                let highlight_word = null;                        ;
+                if(IsHighlightMode()){                        
+                    highlight_word = nt_highlight.Word;
+                    NT_HighlightClear();
+                }
+                let [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
 
-                
                 if (selection.isCollapsed) {
                     SwitchInputMath(char, node, offset);
                 }else{
                     const [anchor_node, anchor_offset] = CorrectFocusToText(selection.anchorNode, selection.anchorOffset);
                     SwitchInputMathSelection(char, node, offset, anchor_node, anchor_offset);
                 }
+                
+                if(highlight_word){
+                    NT_HighlightWord(highlight_word);
+                }
+
                 console.log("keydown: " + char + ", make math");
                 return true;
             }
-            break;            
+            break;
         case ' ':
             {
                 
                 if (selection.isCollapsed) {
+                    let highlight_word = null;                        ;
+                    if(IsHighlightMode()){                        
+                        highlight_word = nt_highlight.Word;
+                        NT_HighlightClear();
+                    }
+                    let [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
+
                     const res = SwitchInputSpace(node, offset);
                     if(!res){
                         SwitchInputChar(char, node, offset);                        
+                    }
+                    
+                    if(highlight_word){
+                        NT_HighlightWord(highlight_word);
                     }
                     
                 }
@@ -249,9 +324,20 @@ function TryInputAsciiChar(char) {
         case '|':
             {
                 if (selection.isCollapsed) {
+                    let highlight_word = null;                        ;
+                    if(IsHighlightMode()){                        
+                        highlight_word = nt_highlight.Word;
+                        NT_HighlightClear();                        
+                    }
+                    let [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
+
                     const res = SwitchInputBar(node, offset);
                     if(!res){
                         SwitchInputChar(char, node, offset);
+                    }
+                    
+                    if(highlight_word){
+                        NT_HighlightWord(highlight_word);
                     }
                 
                 }
@@ -262,9 +348,20 @@ function TryInputAsciiChar(char) {
         case '^':
             {
                 if (selection.isCollapsed) {
+                    let highlight_word = null;                        ;
+                    if(IsHighlightMode()){                        
+                        highlight_word = nt_highlight.Word;
+                        NT_HighlightClear();
+                    }
+                    let [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
+
                     const res = SwitchInputHat(node, offset);
                     if(!res){
                         SwitchInputChar(char, node, offset);
+                    }
+                    
+                    if(highlight_word){
+                        NT_HighlightWord(highlight_word);
                     }
                 
                 }
@@ -274,9 +371,21 @@ function TryInputAsciiChar(char) {
         case '(':
             {
                 if (selection.isCollapsed) {
+                    let highlight_word = null;                        ;
+                    if(IsHighlightMode()){                        
+                        highlight_word = nt_highlight.Word;
+                        NT_HighlightClear();
+                    }
+                    let [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);                    
+
                     const res = SwitchInputRoundBra(node, offset);
                     if(!res){
                         SwitchInputChar(char, node, offset);
+                    }
+
+                    
+                    if(highlight_word){
+                        NT_HighlightWord(highlight_word);
                     }
                 
                 }
@@ -291,14 +400,24 @@ function TryInputAsciiChar(char) {
 
                 if(char){
                     if (char.length === 1) {                        
-
-                        if (!selection.isCollapsed) {
-                            CorrectSelectionEdgeTable();
-                            CutSelection(event.currentTarget, selection);                            
-                            [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
+                        
+                        let highlight_word = null;                        ;
+                        if(IsHighlightMode()){                        
+                            highlight_word = nt_highlight.Word;
+                            NT_HighlightClear();
                         }
                         
+                        if (!selection.isCollapsed) {                            
+                            CorrectSelectionEdgeTable();
+                            CutSelection(event.currentTarget, selection);                            
+                        }
+                        let [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
+                        
                         SwitchInputChar(char, node, offset);
+
+                        if(highlight_word){
+                            NT_HighlightWord(highlight_word);
+                        }
                     
                         return true;
                     }
@@ -335,15 +454,15 @@ function SwitchInputChar(text, node, offset) {
             if(offset < margin) return true; //cannot input within mark//
             if(offset > node.length - margin) return  true; //cannot input within mark//
         
-        }else if(node.data　== nt_ZWBR){
+        }else if(node.data == nt_ZWBR){
             undo_man.Begin(node, offset);
             InsertTextIntoText(text, node, 1);
             DeleteText(node, 0, 1);
             undo_man.End(node, text.length);
-            document.getSelection().collapse(node, text.length);
-            return true;    
+            document.getSelection().collapse(node, text.length);            
+            return true;        
         }
-        
+
         //plain text or inside text of math//
         undo_man.Begin(node, offset);
         InsertTextIntoText(text, node, offset);
@@ -376,7 +495,7 @@ function SwitchInputChar(text, node, offset) {
                         const is_br_end = (br_node)=>{
                             if(br_node.nextSibling===null)return true;
                             if((br_node.nextSibling.nodeName==="OL") || (br_node.nextSibling.nodeName==="UL"))return true;
-                            return false;
+                            return true;
                         };
                         if(is_br_end(br_node)){
                             undo_man.Begin(node, offset);
@@ -398,7 +517,7 @@ function SwitchInputChar(text, node, offset) {
                         undo_man.End(target, target.length);
                         document.getSelection().collapse(target, target.length);
                         
-                        return false;
+                        return true;
                     }
                 }
                 if (offset < num_children) {
@@ -411,7 +530,7 @@ function SwitchInputChar(text, node, offset) {
                         undo_man.End(target, text.length);
                         document.getSelection().collapse(target, text.length);
                         
-                        return false;
+                        return true;
                     }
                 }
                 
@@ -449,8 +568,8 @@ function FillTdBr(tr, tag_name, num_column){
 function SwitchInputEnter(node, offset, is_shift) {
     if (node === null) return true;
     
-
-    let already_begun = false;
+    const origin = {node,offset};
+    let should_devide = false;
     
     if (node.nodeType === Node.TEXT_NODE) {
         switch (node.parentNode.tagName) {
@@ -466,28 +585,17 @@ function SwitchInputEnter(node, offset, is_shift) {
         case "TH":
         case "TD":
             {
-                if (offset === 0) {
+                if (offset === node.length) {
                     console.log("go to divide node: " + node.parentNode.tagName);
-                    undo_man.Begin(node, offset);
-                    already_begun = true;
-
+                    
+                    offset = GetIndex(node.parentNode, node) + 1;
+                    node = node.parentNode;
+                }else{
+                    console.log("go to divide node: " + node.parentNode.tagName);
+                    should_devide = (offset > 0);
+                    
                     offset = GetIndex(node.parentNode, node);
                     node = node.parentNode;
-                } else if (offset === node.length) {
-                    console.log("go to divide node: " + node.parentNode.tagName);
-                    undo_man.Begin(node, offset);
-                    already_begun = true;
-
-                    offset = GetIndex(node.parentNode, node) + 1;
-                    node = node.parentNode;
-                } else {
-                    undo_man.Begin(node, offset);
-                    already_begun = true;
-
-                    DivideTextNode(node, offset);
-
-                    offset = GetIndex(node.parentNode, node) + 1;
-                    node = node.parentNode;                        
                 }
             }
             break;
@@ -526,8 +634,10 @@ function SwitchInputEnter(node, offset, is_shift) {
         case "H6":
             {
 
-                if (! already_begun ) {
-                    undo_man.Begin(node, offset);
+                undo_man.Begin(origin.node, origin.offset);
+                if(should_devide){                    
+                    DivideTextNode(origin.node, origin.offset);
+                    ++offset;
                 }
 
                 if(offset===0){
@@ -582,8 +692,10 @@ function SwitchInputEnter(node, offset, is_shift) {
         case "LI":        
                 {
     
-                    if (! already_begun ) {
-                        undo_man.Begin(node, offset);
+                    undo_man.Begin(origin.node, origin.offset);
+                    if(should_devide){                    
+                        DivideTextNode(origin.node, origin.offset);
+                        ++offset;
                     }
     
                     if(offset===0){                        
@@ -652,9 +764,8 @@ function SwitchInputEnter(node, offset, is_shift) {
         case "FIGCAPTION":
             {
 
-                if (! already_begun ) {
-                    undo_man.Begin(node, offset);
-                }
+                
+                undo_man.Begin(origin.node, origin.offset);
                 
                 const figure = node.parentNode;
 
@@ -664,7 +775,7 @@ function SwitchInputEnter(node, offset, is_shift) {
                     
                     const p_node = AddNode("P", figure.parentNode, figure.nextSibling);
                     const fragment = RemoveNodeList(node, node.firstChild, null); //this becomes null//
-                    SafePushNodeList(p_node, fragment);　//this is already safe because original node of p is safe//
+                    SafePushNodeList(p_node, fragment); //this is already safe because original node of p is safe//
                     AddNode("BR", node, null);
                     
 
@@ -688,23 +799,24 @@ function SwitchInputEnter(node, offset, is_shift) {
                 
                 document.getSelection().collapse(focus.node, focus.offset);
                 undo_man.End(focus.node, focus.offset);
-            
+                return true;
             }
             break;
         case "FIGURE":
-            if(offset===0){
-                const new_node = AddNode("P", node.parentNode, node);
-                AddNode("BR", new_node, null);
-                undo_man.End(new_node, 0);
-                document.getSelection().collapse(new_node, 0);                        
-            }else{
-                //nothing to do//
-                undo_man.Cancel();
-                //only the focus moves to figcaption//
-                const focus = FocusOffsetZero(node.lastChild);
-                if(focus){
-                    document.getSelection().collapse(focus.node, focus.offset);      
+            {
+                if((offset===0) && (origin.offset == 0)){
+                    
+                    undo_man.Begin(origin.node, origin.offset);
+                    
+                    const new_node = AddNode("P", node.parentNode, node);
+                    AddNode("BR", new_node, null);
+                    undo_man.End(new_node, 0);
+                    document.getSelection().collapse(new_node, 0);                        
+                    return true;
                 }
+            
+                document.getSelection().collapse(origin.node, origin.offset);      
+                return true;    
             }
             break;
         case "TH":
@@ -712,41 +824,34 @@ function SwitchInputEnter(node, offset, is_shift) {
                 if(!is_shift){
                     const table = node.parentNode.parentNode;
                     if(table.previousSibling===null){                        
-                        if (! already_begun ) {
-                            undo_man.Begin(node, offset);
-                        }
+                        undo_man.Begin(origin.node, origin.offset);
                         const p = AddNode("P", table.parentNode, table);
                         AddNode("BR", p, null);
                         undo_man.End(p, 0);
                         document.getSelection().collapse(p, 0);
-                        return true;        
+                        
                     }            
                 }
-                
-                if (already_begun ) {
-                    undo_man.Cancel();
-                    return true;
-                }
+                return true;
             }
             break;
         case "TD":
             {
-                if (! already_begun ) {
-                    undo_man.Begin(node, offset);
-                }
+                
 
                 
                 if(!is_shift){
                     const table = node.parentNode.parentNode;
                     if(table.nextSibling===null){
+                        undo_man.Begin(origin.node, origin.offset);
                         const p = AddNode("P", table.parentNode, null);
                         AddNode("BR", p, null);
                         undo_man.End(p, 0);
                         document.getSelection().collapse(p, 0);
-                        return true;
+                        
                     }            
                 
-                    break;
+                    return true;
                 }
 
 
@@ -755,8 +860,14 @@ function SwitchInputEnter(node, offset, is_shift) {
 
 
                 if(org_tr === table.firstChild.nextSibling){
-                    undo_man.Cancel();
+                    //second line//
                     return true;
+                }
+
+                undo_man.Begin(origin.node, origin.offset);
+                if(should_devide){                    
+                    DivideTextNode(origin.node, origin.offset);
+                    ++offset;
                 }
 
                 const new_tr = AddNode("TR", table, org_tr.nextSibling);
@@ -793,10 +904,10 @@ function SwitchInputEnter(node, offset, is_shift) {
             break;
         default:
             alert("ERROR: InputEnter at " + node.nodeName);
-            undo_man.Cancel();
+            
             break;
     }
-    undo_man.Cancel();
+    
 
     return true;
 }
@@ -807,7 +918,7 @@ function SwitchInputDelete(node, offset, is_shift) {
     
     
 
-    let already_begun = false;
+    const origin = {node, offset};
         
     if (node.nodeType === Node.TEXT_NODE) {
         switch (node.parentNode.tagName) {
@@ -832,9 +943,7 @@ function SwitchInputDelete(node, offset, is_shift) {
 
                         if (node.nextSibling === null) {
                             console.log("go to parent: " + node.parentNode.tagName);
-                            undo_man.Begin(node, offset);
-                            already_begun = true;
-
+                            
                             node = node.parentNode;
                             offset = node.childNodes.length;
                         } else if (node.nextSibling.nodeType === Node.TEXT_NODE) {
@@ -854,9 +963,7 @@ function SwitchInputDelete(node, offset, is_shift) {
                             return;
                         } else { //OL, UL and BR are also//
                             console.log("go to  parent: " + node.parentNode.tagName);
-                            undo_man.Begin(node, offset);
-                            already_begun = true;
-
+                            
                             offset = GetIndex(node.parentNode, node) + 1;
                             node = node.parentNode;
                         }
@@ -953,9 +1060,8 @@ function SwitchInputDelete(node, offset, is_shift) {
         case "H6":
             {
 
-                if (!already_begun) {
-                    undo_man.Begin(node, offset);
-                }
+                undo_man.Begin(origin.node, origin.offset);
+                
 
                 
                 if ((node.firstChild.nodeName === "BR") && (node.firstChild.nextSibling===null)) {  //delete at null row (including BR tag)//
@@ -1139,10 +1245,7 @@ function SwitchInputDelete(node, offset, is_shift) {
         case "LI":
             {
 
-                if (!already_begun) {
-                    undo_man.Begin(node, offset);
-                }
-
+                undo_man.Begin(origin.node, origin.offset);
                 
                 if (node.firstChild.nodeName === "BR"){
 
@@ -1316,10 +1419,7 @@ function SwitchInputDelete(node, offset, is_shift) {
         case "FIGCAPTION":
             {
 
-                if (!already_begun) {
-                    undo_man.Begin(node, offset);
-                }
-
+                undo_man.Begin(origin.node, origin.offset);
                 
                 if ((node.firstChild.nodeName === "BR") && (node.firstChild.nextSibling===null)) {  //delete at null row (including BR tag)//
                     offset = 1;                    
@@ -1448,10 +1548,7 @@ function SwitchInputDelete(node, offset, is_shift) {
         case "TD":
             {
 
-                if (!already_begun) {
-                    undo_man.Begin(node, offset);
-                }
-
+                undo_man.Begin(origin.node, origin.offset);
                 
                 if ((node.firstChild.nodeName === "BR") && (node.firstChild.nextSibling===null)) {  //delete at null row (including BR tag)//
                     
@@ -1711,7 +1808,7 @@ function SwitchInputBackspace(node, offset, is_shift) {
     
     
 
-    let already_begun = false;
+    const origin = {node, offset};
 
     if (node.nodeType === Node.TEXT_NODE) {
         switch (node.parentNode.tagName) {
@@ -1747,9 +1844,7 @@ function SwitchInputBackspace(node, offset, is_shift) {
                     } else {  //offset === 0//
                         if (node.previousSibling === null) {
                             console.log("go to parent: " + node.parentNode.tagName);
-                            undo_man.Begin(node, offset);
-                            already_begun = true;
-
+                            
                             node = node.parentNode;
                             offset = 0;
                         } else if (node.previousSibling.nodeType === Node.TEXT_NODE) {
@@ -1771,9 +1866,7 @@ function SwitchInputBackspace(node, offset, is_shift) {
                             return;
                         } else { //OL, UL and BR are also//
                             console.log("go to  parent: " + node.parentNode.tagName);
-                            undo_man.Begin(node, offset);
-                            already_begun = true;
-
+                            
                             offset = GetIndex(node.parentNode, node) - 1;
                             node = node.parentNode;
                         }
@@ -1858,10 +1951,8 @@ function SwitchInputBackspace(node, offset, is_shift) {
         case "H6":
             {
 
-                if (!already_begun) {
-                    undo_man.Begin(node, offset);
-                }
-
+                undo_man.Begin(origin.node, origin.offset);
+                
                 
                 if ((node.firstChild.nodeName === "BR") && (node.firstChild.nextSibling===null)) {  //delete at null row (including BR tag)//
                     if (node.previousSibling===null) {
@@ -2005,10 +2096,8 @@ function SwitchInputBackspace(node, offset, is_shift) {
             {
 
                 
-                if (!already_begun) {
-                    undo_man.Begin(node, offset);
-                }
-               
+                undo_man.Begin(origin.node, origin.offset);
+                
                 
                 if (offset > 0) {
                     if(node.childNodes.item(offset-1).nodeName==="BR"){
@@ -2064,10 +2153,8 @@ function SwitchInputBackspace(node, offset, is_shift) {
         case "FIGCAPTION":
             {
 
-                if (!already_begun) {
-                    undo_man.Begin(node, offset);
-                }
-
+                undo_man.Begin(origin.node, origin.offset);
+                
                 
                 if ((node.firstChild.nodeName === "BR") && (node.firstChild.nextSibling===null)) {  //delete at null row (including BR tag)//
                     offset = 0;
@@ -2139,10 +2226,8 @@ function SwitchInputBackspace(node, offset, is_shift) {
         case "TD":
             {
 
-                if (!already_begun) {
-                    undo_man.Begin(node, offset);
-                }
-
+                undo_man.Begin(origin.node, origin.offset);
+                
                 
                 if ((node.firstChild.nodeName === "BR") && (node.firstChild.nextSibling===null)) {  //delete at null row (including BR tag)//
                     offset = 0;
@@ -2282,7 +2367,11 @@ function SwitchInputArrowRight(node, offset, is_shift) {
 
                 offset = GetIndex(node.parentNode, node)+1;
                 node = node.parentNode;
-
+                
+                if(node.nodeName=="MARK"){
+                    offset = GetIndex(node.parentNode, node) + 1;
+                    node = node.parentNode;
+                }
                 //go to switch//
                 
             }else{
@@ -2322,6 +2411,9 @@ function SwitchInputArrowRight(node, offset, is_shift) {
                     //document.getSelection().collapse(node, offset + 1);
                     //return true;
                     node = ch;
+                }else if(ch.nodeName == "MARK"){
+                    document.getSelection().collapse(ch.firstChild, 1);
+                    return true;
                 }else{
                     const focus = FocusOffsetZero(ch);
                     if(focus){
@@ -2416,6 +2508,11 @@ function SwitchInputArrowRightShift(node, offset) {
 
                 offset = GetIndex(node.parentNode, node) + 1;
                 node = node.parentNode;
+                
+                if(node.nodeName=="MARK"){
+                    offset = GetIndex(node.parentNode, node) + 1;
+                    node = node.parentNode;
+                }
                 //go to switch // 
 
             }else{           
@@ -2430,6 +2527,9 @@ function SwitchInputArrowRightShift(node, offset) {
     //for select table mode//
     if((node.tagName == "TH") || (node.tagName == "TD")){
         if(offset == node.childNodes.length){
+            if(IsHighlightMode()){
+                NT_HighlightClear();
+            }
             SetSelectTable(node, node);
             return true;
         }
@@ -2460,6 +2560,9 @@ function SwitchInputArrowRightShift(node, offset) {
                     return true;
                 }else if(ch.nodeName =="BR"){
                     node = ch;
+                }else if(ch.nodeName == "MARK"){
+                    document.getSelection().extend(ch.firstChild, 1);
+                    return true;                
                 }else {
                     const focus = FocusOffsetZero(ch, false);
                     if(focus){
@@ -2627,7 +2730,11 @@ function SwitchInputArrowLeft(node, offset, is_shift) {
                 
                 offset = GetIndex(node.parentNode, node);
                 node = node.parentNode;
-
+                
+                if(node.nodeName=="MARK"){
+                    offset = GetIndex(node.parentNode, node);
+                    node = node.parentNode;
+                }
                 //go to switch//
 
             }else{
@@ -2657,7 +2764,7 @@ function SwitchInputArrowLeft(node, offset, is_shift) {
             const ch = node.childNodes.item(offset-1);
             if(ch ){
                 if( ch.nodeType===Node.TEXT_NODE){
-                    document.getSelection().extend(ch, ch.length - 1);
+                    document.getSelection().collapse(ch, ch.length - 1);
                     return true;
                 }else if(ch.className==="math"){
                     const focus = EnableMathEdit(ch, -1);
@@ -2665,6 +2772,9 @@ function SwitchInputArrowLeft(node, offset, is_shift) {
                     return true;
                 }else if(ch.nodeName == "BR"){
                     node = ch;
+                }else if( ch.nodeName == "MARK"){
+                    document.getSelection().collapse(ch.firstChild, ch.firstChild.length - 1);
+                    return true;                        
                 }else{
                     const focus = FocusOffsetLast(ch);
                     if(focus){
@@ -2754,6 +2864,11 @@ function SwitchInputArrowLeftShift(node, offset) {
                 
                 offset = GetIndex(node.parentNode, node);
                 node = node.parentNode;
+                
+                if(node.nodeName=="MARK"){
+                    offset = GetIndex(node.parentNode, node);
+                    node = node.parentNode;
+                }
                 //go to switch//
 
             }else{
@@ -2766,6 +2881,9 @@ function SwitchInputArrowLeftShift(node, offset) {
     //for select table mode//
     if((node.tagName == "TH") || (node.tagName == "TD")){
         if(offset == 0){
+            if(IsHighlightMode()){
+                NT_HighlightClear();
+            }
             SetSelectTable(node, node);
             return true;
         }
@@ -2797,6 +2915,9 @@ function SwitchInputArrowLeftShift(node, offset) {
                     return true;
                 }else if(ch.nodeName =="BR"){
                     node = ch;
+                }else if( ch.nodeName == "MARK"){
+                    document.getSelection().extend(ch.firstChild, ch.firstChild.length - 1);
+                    return true;                                        
                 }else {
                     const focus = FocusOffsetLast(ch, false);
                     if(focus){
@@ -3081,7 +3202,7 @@ function SwitchInputMath(mark, node, offset) {
             }
             break;            
         default:
-            alert("ERROR: InputChar at " + node.tagName);
+            alert("ERROR: InputChar in Math at" + node.tagName);
             break;
     }
    
@@ -3488,6 +3609,11 @@ function SelectAll(maindiv){
         maindiv.lastChild, maindiv.lastChild.childNodes.length);
 }
 
+function CorrectFocusToText2(node, offset){
+    let [fnode,foffset] = CorrectFocusToText(node,offset);
+    return {node:fnode, offset: foffset};
+}
+
 function CorrectFocusToText(node, offset){    
     
     if(node.nodeType===Node.TEXT_NODE){
@@ -3517,7 +3643,12 @@ function CorrectFocusToText(node, offset){
     }
 
     node = node.childNodes.item(offset);
-    while(node.nodeType!==Node.TEXT_NODE){        
+    while(node.nodeType!=Node.TEXT_NODE){    
+        if(node.previousSibling){
+            if(node.previousSibling.nodeType==Node.TEXT_NODE){
+                return [node.previousSibling, node.previousSibling.length];
+            }
+        }
         if(! node.hasChildNodes()){
             return [node.parentNode, offset];
         }    
@@ -3676,10 +3807,9 @@ Input "|"
 */
 function SwitchInputBar(node, offset) {
     if (node === null) return false;
-
      
-
-    let already_begun = false;
+    const origin = {node, offset};
+    let should_devide = false;
     
     if (node.nodeType === Node.TEXT_NODE) {
         switch (node.parentNode.tagName) {
@@ -3703,57 +3833,22 @@ function SwitchInputBar(node, offset) {
             case "TH":   //to split column//
             case "TD":
                 {
-                    if (offset === 0) {
+                    if (offset === node.length) {
                         console.log("go to divide node: " + node.parentNode.tagName);
-                        undo_man.Begin(node, offset);
-                        already_begun = true;
+                        
+                        offset = GetIndex(node.parentNode, node) + 1;
+                        node = node.parentNode;
+                    }else{
+                        console.log("go to divide node: " + node.parentNode.tagName);
+                        should_devide = (offset > 0);
 
                         offset = GetIndex(node.parentNode, node);
                         node = node.parentNode;
-                    } else if (offset === node.length) {
-                        console.log("go to divide node: " + node.parentNode.tagName);
-                        undo_man.Begin(node, offset);
-                        already_begun = true;
-
-                        offset = GetIndex(node.parentNode, node) + 1;
-                        node = node.parentNode;
-                    } else {
-                        undo_man.Begin(node, offset);
-                        already_begun = true;
-
-                        DivideTextNode(node, offset);
-
-                        offset = GetIndex(node.parentNode, node) + 1;
-                        node = node.parentNode;                        
                     }
+                    
                 }
                 break;
-            /*    
-            case "SPAN":           
-                if(IsTextNodeInMath(node)){
-                    const math = node.parentNode.parentNode;
-                    if((math.parentNode.nodeName !=="TH") && (math.parentNode.nodeName!=="TD") ){
-                        return false;
-                    }
-                    if(offset === 0){
-                        undo_man.Begin(node, offset);
-                        already_begun = true;
-                        node = math.parentNode;
-                        offset = GetIndex(node, math);     
-                        DisableEdit(math);                                           
-                        
-                        break;
-                    }else if (offset === node.length){
-                        undo_man.Begin(node, offset);
-                        already_begun = true;
-                        node = math.parentNode;
-                        offset = GetIndex(node, math) + 1;
-                        DisableEdit(math);
-                        break;
-                    }
-                }
-                return false;
-            */    
+            
             default:
                 //nothing to do for span.math, span.inline and so on//
                 return false;
@@ -3765,9 +3860,13 @@ function SwitchInputBar(node, offset) {
     switch (node.tagName) {
         case "TH":
             {
-                if (! already_begun ) {
-                    undo_man.Begin(node, offset);
+                
+                undo_man.Begin(origin.node, origin.offset);
+                if(should_devide){                    
+                    DivideTextNode(origin.node, origin.offset);
+                    ++offset;
                 }
+                
 
                 const org_tr = node.parentNode;
                 const table = org_tr.parentNode;
@@ -3815,17 +3914,20 @@ function SwitchInputBar(node, offset) {
         case "TD":
             {
 
-                if (! already_begun ) {
-                    undo_man.Begin(node, offset);
-                }
 
                 const org_tr = node.parentNode;
                 const table = org_tr.parentNode;
 
 
                 if(org_tr === table.firstChild.nextSibling){
-                    undo_man.Cancel();
+                    
                     return true;
+                }
+                
+                undo_man.Begin(origin.node, origin.offset);
+                if(should_devide){                    
+                    DivideTextNode(origin.node, origin.offset);
+                    ++offset;
                 }
 
                 let new_td = null;
@@ -3858,13 +3960,9 @@ function SwitchInputBar(node, offset) {
                 return true;
                 
             }
-            break;
-        default:
-            //alert("ERROR: Input Bar at " + node.nodeName);
-            undo_man.Cancel();
-            break;
+            break;        
     }
-    undo_man.Cancel();
+    
     return false;
 }
 

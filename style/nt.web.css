@@ -23,7 +23,7 @@ div#backbox{
     overflow: auto; 
     background: #c3c3c3;
 }
-div.modal1{
+div#modal1{
     display: none;
     position: fixed;
     top: 0px;
@@ -80,5 +80,52 @@ div.version{
     padding-left: 10px; padding-right: 10px;        
 }
 
+
+div#findbox{
+    display: none;
+    position: fixed;
+    top: 0px;
+    /*left: 0px;*/
+    right: 16px; 
+    /*bottom: 0px;*/
+    width: 280px;
+    height: 34px;
+    z-index: 9999;
+    background: #c0dcff; 
+    padding: 6px;    
+    font-size: 14pt;
+    font-family: sans-serif;
+    
+    /*padding-top: 32pt;*/
+}
+
+div#findbox #findbox_input{
+    position: relative;
+    display: inline-block;
+    top: 0px;
+    /*left: 0px;*/
+    left: 0px; 
+    /*bottom: 0px;*/
+    width: 160px;
+    margin: 0px;
+    padding: 0px;
+    font-size: 14pt;
+    font-family: sans-serif;
+    
+}
+div#findbox .findbox_btn{
+    position: relative;
+    display: inline-block;
+    /*top: 8px;*/
+    /*left: 0px;*/
+    /*left: 180px; */
+    /*bottom: 0px;*/
+    width: 32px;
+    margin: 0px;
+    padding: 0px;
+    font-size: 14pt;
+    font-family: sans-serif;
+    
+}
 
 
