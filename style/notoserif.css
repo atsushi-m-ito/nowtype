@@ -35,11 +35,13 @@ div#paper {
     padding-bottom: 25mm;
 
     /* user settings */
-    font-size: 11pt;
-    font-family: "local-Noto Serif JP","Noto Serif JP","BIZ UDPMincho","YuMincho","MS PMincho",serif;
+    font-size: 12pt;
+    font-family: "Times New Roman","local-Noto Serif JP","Noto Serif JP","BIZ UDPMincho","YuMincho","MS PMincho",serif;
     background: white;
     color: black;
 }
+
+.katex {font-size: 1.1em;}
 
 div#render_div{ 
     width: 170mm;

@@ -15,6 +15,7 @@ let nt_file_status = {is_updated: false};
 
 const user_setting_path = app.getPath("userData") + "/user.setting.json";
 let file_history = [];
+let lost_file_history = [];
 
 const CreateWindow = () => {
     const setting = ReadJSON(user_setting_path);
@@ -594,6 +595,7 @@ async function asyncOpenFile(filepath = null) {
                 message: "The file does not already exist.",
             }); 
         
+        lost_file_history.push(filepath);
         UpdateFileHistory(file_history, filepath, false);
         return;
     }
@@ -894,10 +896,17 @@ const SaveSetting = () =>{
     setting.window.startWithMaximized = mainWindow.isMaximized() ? true : false;
     
 
-    if(setting.fileHistory){        
+    if(setting.fileHistory){
+        lost_file_history.forEach((path)=>{
+            const index = setting.fileHistory.indexOf(path);
+            if(index>=0){
+                setting.fileHistory.splice(index,1);
+            }      
+        });
+
         while(file_history.length > 0){
             const path = file_history.shift();
-            UpdateFileHistory(setting.fileHistory, path);
+            UpdateFileHistory(setting.fileHistory, path);            
         }
     }else{
         setting.fileHistory = file_history;

@@ -1292,11 +1292,14 @@ function SwitchInputDelete(node, offset, is_shift) {
                     } else if (ch.tagName === "OL" || ch.tagName === "UL") {
                         //when next node is ol/ul, first li node in child is combined //
 
-                        RaiseFirstLi(ch);
-                        
-                        undo_man.End(node, offset);
-                        document.getSelection().collapse(node, offset);
-
+                        const focus = RaiseFirstLi(ch);
+                        if(focus){
+                            undo_man.End(focus.node, focus.offset);
+                            document.getSelection().collapse(focus.node, focus.offset);
+                        }else{
+                            undo_man.End(node, offset);
+                            document.getSelection().collapse(node, offset);
+                        }
                     } else {
                         alert("ERROR: delete key before undefined element");
                         undo_man.Cancel();
@@ -1773,18 +1776,24 @@ function RaiseFirstLi(ol_node) {
     const ol_li = ol_node.firstChild;
 
     if((ol_li.firstChild.nodeName == "BR") && (ol_li.childNodes.length == 1) ){
-        RemoveNode(ol_node);
-    
+        if(ol_li.nextSibling){
+            RemoveNode(ol_li);
+            return null;
+        }else{
+            RemoveNode(ol_node);
+            return null;
+        }
     }else{    
         const fragment = RemoveNodeList(ol_li, ol_li.firstChild);
         RemoveNode(ol_li);
         const head = AddNodeList(ol_node.parentNode, ol_node, fragment); //become safe for math by the following two lines//
-        SafeJunctionPoint(ol_node.parentNode, head);
+        const focus = SafeJunctionPoint(ol_node.parentNode, head);
         if(ol_node.hasChildNodes()){
             SafeJunctionPoint(ol_node.parentNode, ol_node);
         }else{
             RemoveNode(ol_node);
         }
+        return focus;
     }
 
     
