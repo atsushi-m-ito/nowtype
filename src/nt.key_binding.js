@@ -4094,14 +4094,15 @@ function SwitchInputRoundBra(node, offset) {
     InsertTextIntoText(sq_text, math_text, 0);
     DeleteText(math_text, sq_text.length, math_text.length);
 
-    if(math.parentNode.nodeName == "P"){
-        if(math.previousSibling.data == nt_ZWBR){
-            if(math.previousSibling.previousSibling===null){                
-                ConvertPtoFigure(math.parentNode);
+    if(is_img){
+        if(math.parentNode.nodeName == "P"){
+            if(math.previousSibling.data == nt_ZWBR){
+                if(math.previousSibling.previousSibling===null){                
+                    ConvertPtoFigure(math.parentNode);
+                }
             }
         }
     }
-
     
     const focus = EnableMathEdit(math, offset - pos_sq_bra + 1);
     document.getSelection().collapse(focus.node, focus.offset);
