@@ -1,6 +1,6 @@
 "use strict";
 
-
+        
 let MO_IME_node_origin = null;
 let MO_IME_offset_origin = 0;
 
@@ -29,13 +29,18 @@ function MO_OnCompositionChange(record_list){
                     const last = MO_update_list[MO_update_list.length-1];
                     if((last.record.type == record.type) && (last.record.target === record.target)){
                         new_target_update = false;
-                        console.log("MutationObserver detect (not new):",last.record.type,"\n", last.record.oldValue, "\nto\n", last.record.target);
+
+                        const old_for_log = last.record.oldValue;
+                        const new_for_log = last.record.target;
+                        console.log("MutationObserver detect (not new):",last.record.type,"\n", old_for_log,"(",old_for_log.length,")", "\nto\n", new_for_log);
                     }
                 }
                 if(new_target_update){
                     const offset = GetIndex(record.target.parentNode, record.target);
                     MO_update_list.push({record:record, offset:offset});
-                    console.log("MutationObserver detect:",record.type,"\n", record.oldValue, "\nto\n", record.target);
+                    const old_for_log = record.oldValue;
+                    const new_for_log = record.target;                        
+                    console.log("MutationObserver detect:",record.type,"\n", old_for_log,"(",old_for_log.length,")", "\nto\n", new_for_log);
             
                     //for highlight: parent is memorized for both add and remove//                    
                     const parent = record.target.parentNode;
@@ -69,13 +74,29 @@ function MO_OnCompositionChange(record_list){
     //for Chrome (rollback when the last MutationObserver occurs just after compositionend by Delete/Bakspace key)//
     if((!MO_in_composition) && (MO_update_list.length > 0)){ 
         undo_man.GetChangeEventDispatcher().Disable();
+        const num_undo_history = undo_man.numHistory;
         MO_RegisterIMEUpdate();
         //undo because DOM is broken by Chrome bug//
         if(IsHighlightMode()){
             NT_HighlightClear();
         }
-        ExecUndo();
-        undo_man.Shrink();
+        
+        /////////////////////////////////////////////////
+        //This is force rollback for IME canncel by delete/backspace key in Chromium.
+        //Example of bug is as follows:
+        // In the case that $math$ span node and text node adjoints,
+        // the IME input start between the $math$ span and text_node (example: the position of "|" in "$f(x)$|ABCD")
+        // and cancel all charactors by backspace key before putting enter key.
+        // Then, the original text "ABCD" is also removed and it inserted in the math span.
+        //Here, the comparison of numHistory is to check actual update of DOM.
+        //In anycas, the DOM is not actually update by IME cancel,
+        //and the rollback of DOM without update is the next bug.
+        if( undo_man.numHistory != num_undo_history){
+            ExecUndo();
+            undo_man.Shrink();
+        }
+        ///////////////////////////////////////////
+        
         undo_man.GetChangeEventDispatcher().Enable();
     }
 }
@@ -213,10 +234,21 @@ function MO_RegisterIMEUpdate(){
         if(record.type==="characterData"){
             console.log("IME: regarded, replace all text data in the node");
             
+            const change = StrEnclosureComp(record.oldValue, record.target.data);
+            if(change.width1 > 0){
+                undo_man.Register(UR_TYPE.DELETE_IN_TEXT, record.oldValue.substring(change.begin, change.begin+change.width1), record.target, change.begin, change.width1);                
+            }
+            if(change.width2 > 0){
+                undo_man.Register(UR_TYPE.INSERT_TEXT_INTO_TEXT, record.target.data.substring(change.begin, change.begin+change.width2), record.target, change.begin, change.width2);                
+            }
+            modified_text_list.push({text_node:record.target, offset:change.begin, length:change.width2});
+
+            /*
+            //original//
             undo_man.Register(UR_TYPE.DELETE_IN_TEXT, record.oldValue, record.target, 0, record.oldValue.length);
             undo_man.Register(UR_TYPE.INSERT_TEXT_INTO_TEXT, record.target.data, record.target, 0, record.target.length);
             modified_text_list.push(record.target);
-            
+            */
         }else if(record.type==="childList"){
             if(record.addedNodes.length>0){
                 const parent = record.target;
@@ -265,7 +297,9 @@ function MO_RegisterIMEUpdate(){
     }
 
     //Check position where IME Text is inserted //
-    modified_text_list.forEach( (text_node) => {
+    modified_text_list.forEach( (value) => {
+        const text_node = value.text_node;
+
         // (1) inserting IME Text into margin text of math node//
         if(IsTextNodeInMath(text_node)){
             //const margin = GetEditMarginByClassName(text_node.parentNode.className);
@@ -322,14 +356,59 @@ function MO_RegisterIMEUpdate(){
                 InsertTextIntoText(info.endMark, text_node, text_node.length);            
             }        
             
-        }else{
-            //(2) inserting IME Text into ZWBR node//
-            //Note that the above math node does not have ZWBR//
-            if(text_node.data == nt_ZWBR) return;
-            let pos = text_node.data.indexOf(nt_ZWBR);
-            if(pos>=0){
-                DeleteText(text_node, pos, 1);
+        
+        }else{//(2) inserting IME Text into text node//
+        
+            
+            //check the charactors for math tags.//
+            {
+                const target_text = text_node.data.substring(value.offset, value.offset+value.length);
+                let fragment = MD2DOM_OneLine(target_text);
+                let is_including_math = false;
+                let last_math = null;
+                fragment.childNodes.forEach((child)=>{
+                    if(child.className == "math"){
+                        is_including_math = true;
+                        last_math = child;                  
+                    }
+                });
+                if(is_including_math){
+                    let node_next = null;
+                    if(value.offset+value.length < text_node.data.length){
+                        DivideTextNode(text_node, value.offset+value.length);
+                        node_next = text_node.nextSibling;
+                    }
+                    let removable_node = text_node;
+                    if(value.offset > 0){
+                        DivideTextNode(text_node, value.offset);
+                        removable_node = text_node.nextSibling;
+                    }
+                    let parent = text_node.parentNode;
+                    RemoveNode(removable_node);
+                    let first = AddNodeList(parent, node_next, fragment);     //combine node//
+                    //focus_by_math = SafeJunctionPoint(parent, node_next);
+                    for(let node = first; node !== node_next; node = node.nextSibling){
+                        DisableEdit(node, true);
+                    }
+                    const focus_by_math = SafeJunctionPoint(parent, node_next);
+                    if(first.parentNode === parent){ //here, sometimes first is deleted by the above SafeJunctionPoint//
+                        SafeJunctionPoint(parent, first);
+                    }
+                    document.getSelection().collapse(focus_by_math.node, focus_by_math.offset);
+
+                }else{
+                    //just only text node//
+                    //Note that the above math node does not have ZWBR//
+                    if(text_node.data == nt_ZWBR) return;
+                    
+                    const pos = text_node.data.indexOf(nt_ZWBR);
+                    if(pos>=0){
+                        DeleteText(text_node, pos, 1);
+                    }                                        
+
+                }
             }
+
         }        
     });
     
@@ -342,6 +421,7 @@ function MO_RegisterIMEUpdate(){
     */
 
     
+
     let focus = {node:document.getSelection().focusNode, offset:document.getSelection().focusOffset};
     if(focus.node.nodeType!==Node.TEXT_NODE){
         [focus.node, focus.offset] = RefineFocusToText(focus.node, focus.offset);        

@@ -206,6 +206,23 @@ function MD2DOM(text_buffer){
     return parent;
 }
 
+function MD2DOM_OneLine(text_buffer){
+    
+    text_buffer = ReplaceAll(text_buffer, "\t", "    ");
+    let parent = new DocumentFragment();
+    
+    const buffer_length = text_buffer.length;
+    let i = 0;
+    while( i < buffer_length ){
+        
+        let p_end = ParseH1(text_buffer, i, parent); //if read as H1, math display mode is disabled//
+        i = p_end;        
+    }
+    ConnectAdjacentText(parent);
+    AssertAllforMath(parent);
+    return parent;
+}
+
 function ParseP(text_buffer, i_begin, parent){
     const buffer_length = text_buffer.length;
     let offset = i_begin;
@@ -765,56 +782,73 @@ function ParseMath(text_buffer, i_begin, parent, allow_display = true){
 
     let i = i_begin;
     let s = text_buffer.charAt(i+1);
-    if(s === '$'){
-        if(!allow_display){
-            alert("ERROR: display math '$$' is not allowed here.");
-            return ErrorTag(text_buffer, i, parent);
-            //return i + 2;
-        }
-        //display math//
-        let p = text_buffer.indexOf("$$", i+2);
-        if(p < 0){
-            alert("ERROR: end of display math '$$' is not found.");
+    if(s == '$'){
+        if(allow_display){
             
-            return ErrorTag(text_buffer, i, parent);
-            //return i+2;
-        }else{
+            //display math//
+            let p = text_buffer.indexOf("$$", i+2);
+            let math_text;
+            let restart_pos;
+            if(p >= 0){
+                math_text = text_buffer.substring(i, p+2);
+                restart_pos = p+2;
+            
+                
+                //remove head spaces//
+                const prev_n = text_buffer.lastIndexOf("\n", i);
+                const rep_str = "\n" + " ".repeat((prev_n < 0) ? i : i - prev_n - 1);            
+                math_text = ReplaceAll(math_text, rep_str, "\n");
 
-            //remove head spaces//
-            const prev_n = text_buffer.lastIndexOf("\n", i);
-            const rep_str = "\n" + " ".repeat((prev_n < 0) ? i : i - prev_n - 1);            
-            let math_text = text_buffer.substring(i, p+2);
-            math_text = ReplaceAll(math_text, rep_str, "\n");
-
-            //add new math block
-            let span = document.createElement("SPAN");
-            span.className="editmathdisp";
-            span.appendChild(document.createTextNode(  math_text  ));
-            let math = document.createElement("SPAN");
-            math.className="math";
-            math.appendChild(document.createElement("SPAN"));
-            math.appendChild(span);
-            parent.appendChild(math);
-            return p + 2;
+                //add new math block
+                let span = document.createElement("SPAN");
+                span.className="editmathdisp";
+                span.appendChild(document.createTextNode(  math_text  ));
+                let math = document.createElement("SPAN");
+                math.className="math";
+                math.appendChild(document.createElement("SPAN"));
+                math.appendChild(span);
+                parent.appendChild(math);
+                return restart_pos;
+            }
+            
         }
-    }else{
+        //here, "" is found but displaymode is not allowed, or does not find end tag//
+        i++; //shift start point//
+    }
+    
+    
+    //come here if the math is not display//
+    {
         //inline math//
-        let p = text_buffer.indexOf("$", i+2);
-        if(p < 0){
-            alert("ERROR: end of inline math '$' is not found.");
-            return ErrorTag(text_buffer, i, parent);
-            //return i + 1;
+        let p = text_buffer.indexOf("$", i+1);
+        let math_text;
+        let restart_pos;
+        if(p >= 0){
+            math_text = text_buffer.substring(i, p+1);
+            restart_pos = p + 1;
         }else{
-            let span = document.createElement("SPAN");
-            span.className="editmath";
-            span.appendChild(document.createTextNode( text_buffer.substring(i, p+1)));
-            let math = document.createElement("SPAN");
-            math.className="math";
-            math.appendChild(document.createElement("SPAN"));
-            math.appendChild(span);
-            parent.appendChild(math);
-            return p + 1;
+        
+            //alert("ERROR: end of inline math '$' is not found.");
+            let pn = text_buffer.indexOf("\n", i+1);
+            if(pn >= 0){
+                math_text = text_buffer.substring(i, pn) + "$";
+                restart_pos = pn;
+            }else{
+                math_text = text_buffer.substring(i) + "$";                
+                restart_pos = text_buffer.length;
+            }
         }
+        
+        let span = document.createElement("SPAN");
+        span.className="editmath";
+        span.appendChild(document.createTextNode( math_text ));
+        let math = document.createElement("SPAN");
+        math.className="math";
+        math.appendChild(document.createElement("SPAN"));
+        math.appendChild(span);
+        parent.appendChild(math);
+        return restart_pos;
+        
     }
 }
 
@@ -824,60 +858,74 @@ function ParseCode(text_buffer, i_begin, parent, allow_display = true){
     const s = text_buffer.charAt(i+1);
     const s2 = text_buffer.charAt(i+2);
     if((s === '`')&&(s2 === '`')){
-        if(!allow_display){
-            alert("ERROR: display code '```' is not allowed here.");
-            return ErrorTag(text_buffer, i, parent);
-            //return i + 2;
-        }
-        //display math//
-        let p = text_buffer.indexOf("```", i+3);
-        if(p < 0){
-            alert("ERROR: end of display code '```' is not found.");
-            return ErrorTag(text_buffer, i, parent);
-            //return i+2;
-        }else{
+        if(allow_display){
             
-            //remove head spaces//
-            const prev_n = text_buffer.lastIndexOf("\n", i);
-            const rep_str = "\n" + " ".repeat((prev_n < 0) ? i : i - prev_n - 1);            
-            let math_text = text_buffer.substring(i, p+3);
-            math_text = ReplaceAll(math_text, rep_str, "\n");
+            //display math//
+            let p = text_buffer.indexOf("```", i+3);
+            let math_text;
+            let restart_pos;
+            if(p>=0){
+                math_text = text_buffer.substring(i, p+3);
+                restart_pos = p + 3;
+                    
+                //remove head spaces//
+                const prev_n = text_buffer.lastIndexOf("\n", i);
+                const rep_str = "\n" + " ".repeat((prev_n < 0) ? i : i - prev_n - 1);            
+                math_text = ReplaceAll(math_text, rep_str, "\n");
 
-            //add new code block
-            const pre = document.createElement("SPAN");
-            pre.className="previewcodedisp";            
-            pre.textContent="previewcodedisp";    
-            const span = document.createElement("SPAN");
-            span.className="editcodedisp";
-            span.appendChild(document.createTextNode(  math_text  ));
-            const math = document.createElement("SPAN");
-            math.className="math";
-            math.appendChild(pre);
-            math.appendChild(span);
-            parent.appendChild(math);
-            return p + 3;
+                //add new code block
+                const pre = document.createElement("SPAN");
+                pre.className="previewcodedisp";            
+                pre.textContent="previewcodedisp";    
+                const span = document.createElement("SPAN");
+                span.className="editcodedisp";
+                span.appendChild(document.createTextNode(  math_text  ));
+                const math = document.createElement("SPAN");
+                math.className="math";
+                math.appendChild(pre);
+                math.appendChild(span);
+                parent.appendChild(math);
+                return restart_pos;
+            }
         }
-    }else{
+        //here, "" is found but displaymode is not allowed, or does not find end tag//
+        i+=2; //shift start point//
+    }
+    
+    
+    //come here if the math is not display//
+    {
         //inline math//
-        const p = text_buffer.indexOf('`', i+2);
-        if(p < 0){
-            alert("ERROR: end of inline code '`' is not found.");
-            return ErrorTag(text_buffer, i, parent);
-            //return i + 1;
+        const p = text_buffer.indexOf('`', i+1);
+        let math_text;
+        let restart_pos;
+        if(p>=0){
+            math_text = text_buffer.substring(i, p+1);
+            restart_pos = p + 1;
         }else{
-            const pre = document.createElement("SPAN");
-            pre.className="previewcode";            
-            pre.textContent="previewcode";            
-            const span = document.createElement("SPAN");
-            span.className="editcode";
-            span.appendChild(document.createTextNode( text_buffer.substring(i, p+1)));
-            const math = document.createElement("SPAN");
-            math.className="math";
-            math.appendChild(pre);
-            math.appendChild(span);
-            parent.appendChild(math);
-            return p + 1;
+            let pn = text_buffer.indexOf("\n", i+1);
+            if(pn >= 0){
+                math_text = text_buffer.substring(i, pn) + "`";
+                restart_pos = pn;
+            }else{
+                math_text = text_buffer.substring(i) + "`";
+                restart_pos = text_buffer.length;
+            }        
         }
+
+        const pre = document.createElement("SPAN");
+        pre.className="previewcode";            
+        pre.textContent="previewcode";            
+        const span = document.createElement("SPAN");
+        span.className="editcode";
+        span.appendChild(document.createTextNode( math_text));
+        const math = document.createElement("SPAN");
+        math.className="math";
+        math.appendChild(pre);
+        math.appendChild(span);
+        parent.appendChild(math);
+        return restart_pos;
+        
     }
 }
 
@@ -922,38 +970,49 @@ function ParseEm(text_buffer, i_begin, parent){
         const mark = ch.repeat(k-i);
         //em (italic)
         const p = text_buffer.indexOf(mark, k+1);
-        if(p < 0){
-            alert("ERROR: end of enphasis " + mark +  " is not found.");
-            return ErrorTag(text_buffer, i, parent);
-            //return k;
+        let math_text;
+        let restart_pos;
+        if(p >= 0){
+            math_text = text_buffer.substring(i, p + (k-i));
+            restart_pos = p + (k-i);
         }else{
-            const math =document.createElement("SPAN"); 
-            math.className="math";
-            if(k-i===1){
-                const span = document.createElement("EM");    
-                span.appendChild(document.createTextNode( text_buffer.substring(k, p)));
-                math.appendChild(span);
-            }else if(k-i===2){
-                const span = document.createElement("STRONG");    
-                span.appendChild(document.createTextNode( text_buffer.substring(k, p)));
-                math.appendChild(span);
+            let pn = text_buffer.indexOf("\n", k+2);
+            if(pn >= 0){
+                math_text = text_buffer.substring(i, pn) + mark;
+                restart_pos = pn;
+                p = pn;
             }else{
-                const span = document.createElement("STRONG");    
-                span.appendChild(document.createTextNode( text_buffer.substring(k, p)));
-                const span1 = document.createElement("EM");
-                span1.appendChild(span);
-                math.appendChild(span1);
-            }
-            const edit = document.createElement("SPAN"); 
-            edit.className = "editem" + (k-i).toString();
-            edit.appendChild( document.createTextNode( text_buffer.substring(i, p + (k-i))));
-            
-            math.appendChild(edit);
-                        
-            parent.appendChild(math);
-            return p + (k-i);
-            
+                math_text = text_buffer.substring(i) + mark;
+                restart_pos = text_buffer.length;
+                p = text_buffer.length;
+            }    
         }
+        
+        const math =document.createElement("SPAN"); 
+        math.className="math";
+        if(k-i===1){
+            const span = document.createElement("EM");    
+            span.appendChild(document.createTextNode( text_buffer.substring(k, p)));
+            math.appendChild(span);
+        }else if(k-i===2){
+            const span = document.createElement("STRONG");    
+            span.appendChild(document.createTextNode( text_buffer.substring(k, p)));
+            math.appendChild(span);
+        }else{
+            const span = document.createElement("STRONG");    
+            span.appendChild(document.createTextNode( text_buffer.substring(k, p)));
+            const span1 = document.createElement("EM");
+            span1.appendChild(span);
+            math.appendChild(span1);
+        }
+        const edit = document.createElement("SPAN"); 
+        edit.className = "editem" + (k-i).toString();
+        edit.appendChild( document.createTextNode( math_text));
+        
+        math.appendChild(edit);
+        parent.appendChild(math);
+        return restart_pos;
+            
     }else{
         const mark = ch.repeat(k-i);
         alert("ERROR: emphasis mark " + mark + " is repeating greater than 3 characters.");
@@ -965,9 +1024,9 @@ function ParseEm(text_buffer, i_begin, parent){
 function ParseImg(text_buffer, i_begin, parent){
     let k = i_begin + 1;
     if(text_buffer.charAt(k) !== '['){
-        alert("ERROR: img '![]()' has no '[' symbol.");
-        return ErrorTag(text_buffer, k, parent);
-        
+        //alert("ERROR: img '![]()' has no '[' symbol.");
+        parent.appendChild( document.createTextNode( text_buffer.substring(i,k)));
+        return k;        
     }
 
     let k_end = text_buffer.indexOf(']', k+1);
@@ -1060,11 +1119,23 @@ function ParseA(text_buffer, i_begin, parent){
 function ParseCite(text_buffer, i_begin, parent){
     let k = i_begin;
 
-    let k_end = text_buffer.indexOf(']', k+1);
-    if(k_end < 0){        
-        alert("ERROR: cite '[^  ]' has no ']' symbol.");
-        return ErrorTag(text_buffer, k, parent);
-            
+    let p = text_buffer.indexOf(']', k+1);
+    let math_text;
+    let restart_pos;
+    if(p >= 0){
+        math_text = text_buffer.substring(i_begin, p+1);
+        restart_pos = p+1;
+    }else{
+        let pn = text_buffer.indexOf("\n", i_begin+2);
+        if(pn >= 0){
+            math_text = text_buffer.substring(i_begin, pn) + "]";
+            restart_pos = pn;
+            p = pn;
+        }else{
+            math_text = text_buffer.substring(i_begin) + "]";
+            restart_pos = text_buffer.length;
+            p = text_buffer.length;
+        }   
     }
 
 
@@ -1072,7 +1143,7 @@ function ParseCite(text_buffer, i_begin, parent){
     const math = document.createElement("SPAN");
     math.className = "math";
     const a =document.createElement("A"); 
-    const text = text_buffer.substring(i_begin+2, k_end);
+    const text = text_buffer.substring(i_begin+2, p);
     a.href = "#" + text;
     //a.ref="noopener noreferrer";
     a.className = "previewcite";
@@ -1080,12 +1151,10 @@ function ParseCite(text_buffer, i_begin, parent){
     math.appendChild(a);
     const edit = document.createElement("SPAN");
     edit.className = "editcite";
-    edit.appendChild( document.createTextNode(  "[^" + text + "] " ));    
+    edit.appendChild( document.createTextNode(  math_text + " " ));    
     math.appendChild(edit);    
     parent.appendChild(math);
-    return k_end + 1;
-
-
+    return restart_pos;
     
 }
 

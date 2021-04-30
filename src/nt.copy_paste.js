@@ -439,9 +439,12 @@ function DivideAtCrossSection2( init_ref, init_parent, common_parent){
             next_ref = parent;
         }else if(ref === null){
             //not to divide
+            /*
             const new_node = AddNode(parent.tagName, parent.parentNode, parent.nextSibling);
             AddNode("BR", new_node, null);
-            next_ref = parent.nextSibling; // === new_node//
+            */
+            next_ref = parent.nextSibling;
+           
         
         }else{
             

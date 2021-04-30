@@ -554,28 +554,29 @@ function QuickRedrawMath(render_div){
         const katexdisp = math.firstChild;
         const katex = katexdisp.firstChild;
         
-        const rect = katexdisp.getBoundingClientRect();
-        
-        if(katex.style.display == "none"){
-            if((rect.bottom > 0.0) && (rect.top < whole_height)){
-                if(math !==g_editable_math)
-                {
-                    katex.style.display = null;                    
-                }
-            }
-        }else{
-            if((rect.bottom < 0.0) || (rect.top > whole_height)){
+        if(katex && ('display' in katex )){
+            const rect = katexdisp.getBoundingClientRect();
             
-                if(katexdisp.style.length <= 1){
-                    if(rect.height>0.0){
-                        katexdisp.style.width =String(katexdisp.clientWidth) + "px";
-                        katexdisp.style.height=String(katexdisp.clientHeight) + "px";
+            if((katex.style.display == "none")){
+                if((rect.bottom > 0.0) && (rect.top < whole_height)){
+                    if(math !==g_editable_math)
+                    {
+                        katex.style.display = null;                    
                     }
                 }
-                katex.style.display = "none";
-            }            
+            }else{
+                if((rect.bottom < 0.0) || (rect.top > whole_height)){
+                
+                    if(katexdisp.style.length <= 1){
+                        if(rect.height>0.0){
+                            katexdisp.style.width =String(katexdisp.clientWidth) + "px";
+                            katexdisp.style.height=String(katexdisp.clientHeight) + "px";
+                        }
+                    }
+                    katex.style.display = "none";
+                }            
+            }
         }
-        
         
     }
 }

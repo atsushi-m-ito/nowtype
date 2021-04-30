@@ -16,6 +16,7 @@ let nt_file_status = {is_updated: false};
 const user_setting_path = app.getPath("userData") + "/user.setting.json";
 let file_history = [];
 let lost_file_history = [];
+let current_file_path = null;
 
 const CreateWindow = () => {
     const setting = ReadJSON(user_setting_path);
@@ -203,6 +204,17 @@ function CreateMenu() {
                     label: 'Recent Files..',
                     id: "MenuID_FileHistory",
                     submenu: []
+                },
+                {type: 'separator'},
+                {
+                    label: 'Show in folder',
+                    click: (menuItem, browserWindow, event) => { 
+                        if(! event.triggeredByAccelerator){
+                            if(current_file_path){
+                                shell.showItemInFolder(current_file_path);
+                            }
+                        }
+                    } // 
                 },
                 {type: 'separator'},
                 {
@@ -424,7 +436,7 @@ function CreateMenu() {
                 {
                     label: 'Open setting (JSON)',
                     click: (menuItem, browserWindow, event) =>{
-                        shell.openItem(user_setting_path);
+                        shell.openPath(user_setting_path);
                         //shell.openPath(user_setting_path); //this will be used from electron v9//
                     }
                 },
@@ -443,7 +455,7 @@ function CreateMenu() {
                             buttons: ["OK"],
                             title: "about NowType",
                             message: "NowType version " + app.getVersion(),
-                            detail: "Copyright @ 2019-2020 Atsushi M. Ito",
+                            detail: "Copyright @ 2019-2021 Atsushi M. Ito",
                             icon: nowtype_icon
                         });
                     }
@@ -632,6 +644,7 @@ function UpdateFileHistory(file_history, new_data, do_apend = true){
     }
     if(do_apend){
         file_history.push(new_data);
+        current_file_path = new_data;
     }
 }
 
@@ -685,10 +698,12 @@ async function asyncSaveFile3(filepath, textdata, extension){
                     {
                         name: 'HTML',
                         extensions: ['html']
-                    }
-                    :
+                    }: {
+                        name: 'Markdown',
+                        extensions: ['md']
+                    },                 
                     {
-                        name: 'all',
+                        name: 'All files',
                         extensions: ['*']
                     }
                 ]
@@ -813,6 +828,16 @@ ipcMain.on("zoom", async (event, arg) => {
 
 
 
+const ChangeExt = (filepath, new_ext)=>{
+    if(filepath===null) return "";
+    const pos1 = filepath.lastIndexOf(".");
+    if(pos1===-1){
+        return filepath + "." + new_ext;
+    }else{
+        return filepath.slice(0, pos1+1) + new_ext;
+    }
+};
+
 function MenuPrint(browserWindow, device){
     
     const wc = browserWindow.webContents;
@@ -837,11 +862,10 @@ ipcMain.on("print_ready", async (event, device) => {
         const result = await dialog.showSaveDialog(mainWindow, 
             {
                 filters: [
-                    {
-                        name: 'PDF',
-                        extensions: ['pdf']
-                    }
-                ]
+                    { name: 'PDF', extensions: ['pdf']},
+                    { name: 'All files', extensions: ['*']}
+                ],
+                defaultPath: ChangeExt(current_file_path, "pdf")
             }  );
         if(result.canceled){
             wc.send("print_end");
