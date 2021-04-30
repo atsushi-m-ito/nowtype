@@ -20,7 +20,7 @@ div#paper {
     padding-bottom: 25mm;
 
     /* user settings */
-    font-size: 11pt;
+    font-size: 12pt;
     font-family: 'YuMincho',    /* for Mac (as Medium)*/
     'MyYuminchoC'               /* for Chrome and firefox on Windows */
     ,serif;
@@ -30,9 +30,11 @@ div#paper {
 
 @supports (-ms-ime-align: auto){ /* for Edge(Legacy) */
 div#paper {
-    font-family: 'Yu Mincho Demibold' ,serif;
+    font-family: 'Georgia','Yu Mincho Demibold' ,serif;
 }
 }
+
+.katex {font-size: 1.1em;}
 
 div#render_div{ 
     width: 170mm;
