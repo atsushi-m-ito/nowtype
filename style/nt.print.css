@@ -7,8 +7,8 @@
 /*  本来は以下の記述で良いはずが、Chromium系バグで設定値より大きくなってしまう
     margin-left:   20mm;
     margin-right:  20mm;
-    margin-top:    20mm;
-    margin-bottom: 20mm;
+    margin-top:    25mm;
+    margin-bottom: 25mm;
     回避策として以下のように%で指定する
     margin-top, margin-bottomの設定は複雑
         Chrome, Firefox, Edge(Chromium)ページ横幅に対する割合を設定する
@@ -18,10 +18,10 @@
     11.9047% = 25mm / 210mm != 25mm / 297mm
     ただしでは
 */
-    margin-left:    9.524%;
-    margin-right:   9.524%;
-    margin-top:    11.905%;
-    margin-bottom: 11.905%;
+    margin-left:    9.5238%;
+    margin-right:   9.5238%;
+    margin-top:    11.9047%;
+    margin-bottom: 11.9047%;
 }
 
 
@@ -54,6 +54,7 @@
     }
     div#render_div{
         width:100%;
+        min-height: 10mm;/* if min-hight > 239 mm, the page number of printed material becomes 2 evne if short text in window app.*/
         margin: 0mm;
         padding: 0mm;
         border:none;
