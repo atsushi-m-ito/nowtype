@@ -4,7 +4,7 @@
   "description": "NowType is a markdown editor",
   "main": "ele.main.js",
   "devDependencies": {
-    "electron": "^11.4.12",
+    "electron": "^11.5.0",
     "electron-builder": "^22.11.7",
     "electron-windows-store": "^2.1.0",
     "eslint": "^7.32.0",
