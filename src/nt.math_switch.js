@@ -537,7 +537,7 @@ function QuickRedrawMath(render_div){
     wrapper span tag has style "width: X.XXXpx; height: Y.YYYpx", 
     where the width and height is obtained from clientWidth and clientHeight.
     
-    Node: getBoundingClientRect() should not be used for get width and height
+    Note: getBoundingClientRect() should not be used for get width and height
         because this return values are changed by zoom, 
         while clentWidth and clientHeight are indepenent of zoom
         Therefore, the width and height to set style of math is obtained from clientWidth and clientHeight.
@@ -554,26 +554,24 @@ function QuickRedrawMath(render_div){
         const katexdisp = math.firstChild;
         const katex = katexdisp.firstChild;
         
-        if(katex && ('display' in katex )){
+        if(katex && ('display' in katex.style )){  //set visible/unvisible just for display math// 
             const rect = katexdisp.getBoundingClientRect();
             
             if((katex.style.display == "none")){
                 if((rect.bottom > 0.0) && (rect.top < whole_height)){
-                    if(math !==g_editable_math)
+                    if(math !==g_editable_math)// katex is hidden when edit mode//
                     {
-                        katex.style.display = null;                    
+                        katex.style.display = null;//set visible of katex//
                     }
                 }
             }else{
                 if((rect.bottom < 0.0) || (rect.top > whole_height)){
                 
-                    if(katexdisp.style.length <= 1){
-                        if(rect.height>0.0){
-                            katexdisp.style.width =String(katexdisp.clientWidth) + "px";
-                            katexdisp.style.height=String(katexdisp.clientHeight) + "px";
-                        }
+                    if(rect.height>0.0){
+                        katexdisp.style.width =String(katexdisp.clientWidth) + "px";
+                        katexdisp.style.height=String(katexdisp.clientHeight) + "px";
                     }
-                    katex.style.display = "none";
+                    katex.style.display = "none";//unset visible of katex//
                 }            
             }
         }

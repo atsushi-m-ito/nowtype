@@ -173,6 +173,7 @@
         console.log("filepath:", data.filepath);
         NT_SetFilePath(data.filepath);
         NT_SetMarkdown(data.markdown);
+        QuickRedrawMath(nt_render_div);
         ele_nt_filepath = data.filepath;
 
         NT_ResetChangeFlag();
