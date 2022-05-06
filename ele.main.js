@@ -455,7 +455,7 @@ function CreateMenu() {
                             buttons: ["OK"],
                             title: "about NowType",
                             message: "NowType version " + app.getVersion(),
-                            detail: "Copyright @ 2019-2021 Atsushi M. Ito",
+                            detail: "Copyright @ 2019-2022 Atsushi M. Ito",
                             icon: nowtype_icon
                         });
                     }

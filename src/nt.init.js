@@ -206,19 +206,27 @@ function NT_ResetChangeFlag(){
     undo_man.GetChangeEventDispatcher().Reset();
 }
 
+/* For redrawing math when scroll.
+   note that, this event brings when printing by printer devices. 
+   Therefore, math quick redrawing and hideing should be stoped during printing.
+*/
 let nt_scroll_ticking = false;
 function OnScroll(event){
     if(!nt_scroll_ticking){
         window.requestAnimationFrame(()=>{
-            QuickRedrawMath(nt_render_div);
+            if(! nt_now_printing ){ 
+                QuickRedrawMath(nt_render_div);
+            }
             nt_scroll_ticking = false;
         });
         nt_scroll_ticking = true;
     }
 }
 
+let nt_now_printing = false; /*flag of printing or not, this is used for math redraw*/
 let nt_focus_print = null;
 function NT_BeginPrint(){
+    
     if(g_editable_math){
         DisableEdit(g_editable_math);
     }
@@ -227,9 +235,11 @@ function NT_BeginPrint(){
         focusNode:selection.focusNode,focusOffset:selection.focusOffset}
     FullRedrawMath(nt_render_div);
     nt_render_div.contentEditable="false";
+    nt_now_printing = true;
 }
 
 function NT_EndPrint(){
+    nt_now_printing = false;
     nt_render_div.contentEditable="true";
     QuickRedrawMath(nt_render_div);
     
