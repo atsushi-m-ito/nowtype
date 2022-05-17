@@ -1,11 +1,22 @@
 "use strict";
 
-function NT_MathNumbering(checked) {
+/*
+checked_type = 0: no-number
+             = 1: number
+             = 2: only redraw
+*/
+let nt_math_number_state = 1;             
+function NT_MathNumbering(checked_type) {  
     if(nt_render_div===null) return;
-    console.log("mathnumbering = ", checked);
+    console.log("mathnumbering = ", checked_type);
+    if(checked_type == 0){
+        nt_math_number_state = 0;
+    }else if(checked_type == 1){
+        nt_math_number_state = 1;
+    }
     const render_div = nt_render_div;
     const fragment = FragmentFromChildren(render_div);
-    InitializeMathInFragment(fragment, checked ? 1 : 0);
+    InitializeMathInFragment(fragment, nt_math_number_state);
     render_div.appendChild(fragment);
 }
 

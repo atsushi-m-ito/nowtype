@@ -267,9 +267,14 @@
         ShowFindbox('findbox');
     });
     
-    //Menu: View: Math Numbering//
+    //Menu: View: Math Numbering//    
     window.api.on("mathnumbering", (arg) => {
-        NT_MathNumbering(arg.checked);
+        NT_MathNumbering(arg.checked ? 1 : 0);
+    });
+
+    //Menu: View: Math Numbering//    
+    window.api.on("mathrefresh", (arg) => {
+        NT_MathNumbering(2);
     });
 
     //Menu: View: Spellcheck//

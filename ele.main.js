@@ -344,13 +344,23 @@ function CreateMenu() {
                         MenuZoomout();           
                     }
                 },
-                {type: 'separator'},
+                {type: 'separator'},                
+                {
+                    label: 'Math refresh',
+                    type: 'checkbox',
+                    checked: true,
+                    accelerator: 'F5',
+                    click: (menuItem, browserWindow, event) => {                         
+                        browserWindow.webContents.send("mathrefresh");                        
+                    }
+
+                },
                 {
                     label: 'Math numbering',
                     type: 'checkbox',
                     checked: true,
                     click: (menuItem, browserWindow, event) => {                         
-                        browserWindow.webContents.send("mathnumbering", {checked: menuItem.checked});
+                        browserWindow.webContents.send("mathnumbering", {checked: menuItem.checked});                        
                     }
 
                 },                
