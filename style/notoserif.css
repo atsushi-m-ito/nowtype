@@ -84,16 +84,20 @@ h4::before{
         
 span.math{margin-left: 1pt; margin-right: 1pt;}
 span.editmath{white-space: pre-wrap; color: #000000; background-color: #ececec; font-family: consolas, monospace;}
-span.editmathdisp{ display: block; white-space: pre-wrap ; color: #000000; background-color: #ececec;font-family: consolas, monospace;}
+span.editmathdisp{ display: block; overflow-x: auto; white-space: pre ; color: #000000; background-color: #ececec;font-family: consolas, monospace;}
 
 span.editcode{white-space: pre-wrap; color: #000000; background-color: #ececec; font-family: consolas, monospace;}
 span.previewcode{white-space: pre-wrap; margin-left: 1pt; margin-right: 1pt; padding-left: 1pt; padding-right: 1pt; border: solid 1px #C0C080; border-radius: 3px; color: #000000; background-color: #ffffbc; font-family: consolas, monospace;}
-span.editcodedisp{display: block; white-space: pre-wrap; padding: 5pt; color: #e6e6e6; background-color: #364545; font-family: consolas, monospace;}
-span.previewcodedisp{display: block; white-space: pre-wrap; padding: 5pt; border: solid 1px #C0C080; border-radius: 3px; color: #e6e6e6; background-color: #364545; font-family: consolas, monospace;}
+span.editcodedisp{display: block; overflow-x: auto; white-space: pre; padding: 5pt; color: #e6e6e6; background-color: #364545; font-family: consolas, monospace;}
+span.previewcodedisp{display: block; overflow-x: auto; white-space: pre; padding: 5pt; border: solid 1px #C0C080; border-radius: 3px; color: #e6e6e6; background-color: #364545; font-family: consolas, monospace;}
 
 span.editem1{ font-weight: normal; font-style: italic; background-color: #ececec;  padding-right: 4pt;}
 span.editem2{ font-weight: bold; font-style: normal; background-color: #ececec; }
 span.editem3{ font-weight: bold; font-style: italic; background-color: #ececec;  padding-right: 4pt;}
+em{ font-weight: normal; font-style: italic; color: #0088FF;  padding-right: 4pt;}
+
+span.editdeleted{text-decoration:wavy underline gray;}
+span.previewdeleted{text-decoration:line-through;}
 
 span.editimg{white-space: pre-wrap; color: #000000; background-color: #ececec;}
 span.edita{white-space: pre-wrap; color: #000000; background-color: #ececec;}
@@ -121,7 +125,7 @@ em.readerror{ font-weight: bold; font-style: normal; color: #FF0000; }
 
 span.math > img {
     padding-right: 2pt; font-weight: bold; font-style: normal; color: #FF0000;
-    max-width: 100%;
+    max-width: 75%;
     height: auto;
 }
 

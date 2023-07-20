@@ -61,5 +61,10 @@
         outline: none;
     }
     
+    span.previewcodedisp{ white-space: pre-wrap;}
+
+    figure{
+        break-inside: avoid;
+    }
 
 }
