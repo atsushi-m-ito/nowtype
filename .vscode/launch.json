@@ -7,7 +7,8 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "プログラムの起動",
+            "env": {"NODE_ENV": "development"},
+            "name": "Electron: Main",
             /*"skipFiles": [
                 "<node_internals>/**"
             ],*/
@@ -15,7 +16,7 @@
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
             "runtimeArgs": [
-                "--enable-logging"
+                "--remote-debugging-port=9223"  //open debugging port for renderer process
             ],
             "args": [
                 "."
@@ -26,7 +27,28 @@
             },
             "console":"integratedTerminal",
             "outputCapture": "std",
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",        //use source maps for files in workspace folder
+                "!**/node_modules/**"           //but ignore everything in the node_modules folder
+              ],
+            //"preLaunchTask": "npm: start"
+        },
+        {
+        "name": "Electron: Renderer",
+        "type": "pwa-chrome",             //use the Chrome debugger that comes with VS Code
+        "request": "attach",
+        "port": 9223,                     //use debug port opened in Electron: Main configuration
+        "webRoot": "${workspaceFolder}",
+        "timeout": 60000
         }
-    ]
-
+    ],
+    "compounds": [                        //launch multiple configurations concurrently
+    {
+      "name": "Electron: All",
+      "configurations": [
+        "Electron: Main",
+        "Electron: Renderer"
+      ]
+    }
+  ]
 }

@@ -68,6 +68,9 @@ span.editem1{ font-weight: normal; font-style: italic; background-color: #ececec
 span.editem2{ font-weight: bold; font-style: normal; background-color: #ececec; }
 span.editem3{ font-weight: bold; font-style: italic; background-color: #ececec;  padding-right: 4pt;}
 
+span.editdeleted{text-decoration:wavy underline gray;}
+span.previewdeleted{text-decoration:line-through;}
+
 span.editimg{white-space: pre-wrap; color: #000000; background-color: #ececec;}
 span.edita{white-space: pre-wrap; color: #000000; background-color: #ececec;}
 a{margin-left: 1pt; margin-right: 1pt; padding-left: 1pt; padding-right: 1pt; color: #ffcccc;}

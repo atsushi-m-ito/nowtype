@@ -337,7 +337,13 @@ function DisableEdit(math, in_undo_redo = false){
                 }
                 ShowPreview(math.firstChild);
             }
-            break;
+            break;            
+        case "editdeleted":
+            {
+                math.firstChild.firstChild.data = mathtext;
+                ShowPreview(math.firstChild);
+            }   
+            break;    
         case "edita":
             {
                 let target = math.firstChild;
@@ -479,7 +485,8 @@ function SetHide(node) {
 function UnsetHide(node) {
     
     //node.style.display="inline";
-    node.style.cssText = "clip: auto; height: auto; margin: 0; overflow: visible; position: static; width: auto;";
+    //overflow: auto;
+    node.style.cssText = "clip: auto; height: auto; margin: 0; position: static; width: auto;";
 }
 
 
@@ -498,6 +505,7 @@ function GetEditMarginByClassName(class_name){
         case "editem1": return 1;
         case "editem2": return 2;
         case "editem3": return 3;
+        case "editdeleted": return 2;
         case "edita": return 1;
         case "editimg": return 2;
         case "editcite": return 2;

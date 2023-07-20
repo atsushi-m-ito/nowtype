@@ -293,7 +293,21 @@ function ParseP(text_buffer, i_begin, parent){
                 i = p_end;
                 
             }
-            break;        
+            break;
+        case '~':   //for strong and em node//
+            {   
+                let k = i+1;
+                let s = text_buffer.charAt(k);
+                if(s ==='~'){
+                    if(i - offset > 0){
+                        parent.appendChild(document.createTextNode( text_buffer.substring(offset, i)));
+                    }
+                    const p_end = ParseDel(text_buffer, i, parent);
+                    offset = p_end;
+                    i = p_end;
+                }
+            }
+            break;       
         case '_':   //for strong and em node//
             {   
                 if(! UnderscoreWithSpace(text_buffer, i)){
@@ -929,6 +943,54 @@ function ParseCode(text_buffer, i_begin, parent, allow_display = true){
     }
 }
 
+
+function ParseDel(text_buffer, i_begin, parent){
+    const i = i_begin;
+    const ch = text_buffer.charAt(i);
+    let k = i + 1;
+    if (text_buffer.charAt(k) != ch){
+        return ErrorTag(text_buffer, i, parent);
+    }
+
+
+    const mark = "~~";
+    //em (italic)
+    const p = text_buffer.indexOf(mark, k+1);
+    let math_text;
+    let restart_pos;
+    if(p >= 0){
+        math_text = text_buffer.substring(i, p + 2);
+        restart_pos = p + 2;
+    }else{
+        let pn = text_buffer.indexOf("\n", k+1);
+        if(pn >= 0){
+            math_text = text_buffer.substring(i, pn) + mark;
+            restart_pos = pn;
+            p = pn;
+        }else{
+            math_text = text_buffer.substring(i) + mark;
+            restart_pos = text_buffer.length;
+            p = text_buffer.length;
+        }    
+    }
+        
+    //add new code block
+    const pre = document.createElement("SPAN");
+    pre.className="previewdeleted";            
+    pre.textContent="previewdeleted";    
+    const span = document.createElement("SPAN");
+    span.className="editdeleted";
+    span.appendChild(document.createTextNode(  math_text  ));
+    const math = document.createElement("SPAN");
+    math.className="math";
+    math.appendChild(pre);
+    math.appendChild(span);
+    parent.appendChild(math);
+    return restart_pos;
+
+}
+
+
 function UnderscoreWithSpace(text_buffer, i_begin){
     const i = i_begin;
     const ch = text_buffer.charAt(i);
@@ -1020,6 +1082,7 @@ function ParseEm(text_buffer, i_begin, parent){
         //return k;
     }  
 }
+
 
 function ParseImg(text_buffer, i_begin, parent){
     let k = i_begin + 1;

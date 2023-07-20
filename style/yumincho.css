@@ -89,6 +89,9 @@ span.editem2{ font-weight: 800; font-style: normal; background-color: #ececec; }
 span.editem3{ font-weight: 800; font-style: italic; background-color: #ececec;  padding-right: 4pt;}
 strong{font-weight: 800; }
 
+span.editdeleted{text-decoration:wavy underline gray;}
+span.previewdeleted{text-decoration:line-through;}
+
 span.editimg{white-space: pre-wrap; color: #000000; background-color: #ececec;}
 span.edita{white-space: pre-wrap; color: #000000; background-color: #ececec;}
 span.editcite{white-space: pre-wrap; color: #000000; background-color: #ececec; font-size: 80%;}

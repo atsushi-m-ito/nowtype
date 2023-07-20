@@ -273,7 +273,6 @@ function TryInputAsciiChar(char) {
         case '`':    // insert inline code node//
         case '*':    // insert string and em node//
         case '_':    // insert string and em node//
-        //case '[':    insert a and figure //
             {  // insert math node//
                 let highlight_word = null;                        ;
                 if(IsHighlightMode()){                        
@@ -283,7 +282,7 @@ function TryInputAsciiChar(char) {
                 let [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
 
                 if (selection.isCollapsed) {
-                    SwitchInputMath(char, node, offset);
+                    SwitchInputMath(char, node, offset);                    
                 }else{
                     const [anchor_node, anchor_offset] = CorrectFocusToText(selection.anchorNode, selection.anchorOffset);
                     SwitchInputMathSelection(char, node, offset, anchor_node, anchor_offset);
@@ -365,6 +364,33 @@ function TryInputAsciiChar(char) {
                     }
                 
                 }
+                return true;                
+            }
+            break;
+        case '~':  // insert deleted node //           
+            {
+                let highlight_word = null;             ;
+                if(IsHighlightMode()){                        
+                    highlight_word = nt_highlight.Word;
+                    NT_HighlightClear();
+                }
+                let [node,offset] = CorrectFocusToText(selection.focusNode, selection.focusOffset);
+
+                if (selection.isCollapsed) {
+                    const res = SwitchInputTilde(node, offset);
+                    if(!res){
+                        SwitchInputChar(char, node, offset);
+                    }                                        
+                }else{
+                    const [anchor_node, anchor_offset] = CorrectFocusToText(selection.anchorNode, selection.anchorOffset);
+                    SwitchInputMathSelection(`~~`, node, offset, anchor_node, anchor_offset);
+                }
+                
+                if(highlight_word){
+                    NT_HighlightWord(highlight_word);
+                }
+            
+                
                 return true;                
             }
             break;
@@ -3032,7 +3058,10 @@ function SwitchInputMath(mark, node, offset) {
     case '_':
         class_name = "editem";
         break;
-    /*
+    case '~':
+        class_name = "editdeleted";
+        break;
+            /*
     case '[':
         class_name = "edita";
         if((node.nodeType === Node.TEXT_NODE) && (offset>0)){
@@ -3053,8 +3082,8 @@ function SwitchInputMath(mark, node, offset) {
         //if(node.parentNode.className==="editmathdisp") return;
         if(node.parentNode.nodeName==="SPAN" ){
             //here, enhance math, 
-            //"$" to "$$"
-            //"*" to "**", "***"
+            //from "$" to "$$"
+            //from "*" to "**", "***"
 
             if(node.parentNode.className.slice(0, node.parentNode.className.length-1) === class_name){
                 //em or strong//
@@ -3125,7 +3154,7 @@ function SwitchInputMath(mark, node, offset) {
             }else{
                 ref_node = DivideTextNode(node, offset);            
             }            
-            
+
             const math = AddMathNode(mark, parent, ref_node);
             if(!IsTextNode(math.previousSibling)){
                 AddTextNode(nt_ZWBR, parent, math);
@@ -3134,21 +3163,6 @@ function SwitchInputMath(mark, node, offset) {
                 AddTextNode(nt_ZWBR, parent, math.nextSibling);
             }
 
-            /*
-            if(mark==="!["){
-                if(node.length===1){
-                    RemoveNode(node);
-                    if(parent.nodeName==="P"){
-                        if(parent.firstChild===math){
-                            ConvertPtoFigure(parent);
-                        }
-                    }
-                }else{
-                    DeleteText(node, offset-1);
-                }
-                
-            }
-            */
             
             const focus = EnableMathEdit(math, 1);            
             document.getSelection().collapse(focus.node, focus.offset);
@@ -3239,6 +3253,10 @@ function SwitchInputMathSelection(mark, node, offset, anchor_node, anchor_offset
         break;
     case '**':
     case '_':
+        class_name = "editem";
+        break;
+    
+    case '~~':
         class_name = "editem";
         break;
     default:
@@ -3975,6 +3993,12 @@ function SwitchInputBar(node, offset) {
     return false;
 }
 
+function PreviousText(node, offset, num){
+    if (node === null) return null;
+    if(node.nodeType != Node.TEXT_NODE) return null;// for preventDefault() //
+    if(offset < num) return null;
+    return node.data.slice(offset-num,offset);
+}
 
 /*
 Input "^". In paticular, input into [] position
@@ -4041,6 +4065,65 @@ function SwitchInputHat(node, offset) {
     return true;  // to default input //
 }
 
+
+/*
+Input "~". In paticular, input into [] position
+*/
+function SwitchInputTilde(node, offset) {
+    if (node === null) return true;    
+    if(node.nodeType != Node.TEXT_NODE) return true;// for preventDefault() //
+    if( IsTextNodeInMath(node) ) {
+        if(node.parentNode.className=="editdeleted"){
+            return true;  //when charactor same as the mark of edit math, input is ignored//
+        }
+        return false;
+    }
+
+    let pos_begin = -1;
+    if(offset < node.data.length){
+        if(node.data.charAt(offset + 1) == '~'){
+            pos_begin = offset;
+        }
+    }
+    
+    if((pos_begin < 0) && (offset > 0)){
+        if(node.data.charAt(offset-1) == '~'){
+            pos_begin = offset - 1;
+        }
+    }
+    if(pos_begin<0)  return false;
+
+    //here, node is TEXT //    
+    undo_man.Begin(node, offset);
+    let rm_node = node;
+    if(pos_begin+1 < node.length){
+        DivideTextNode(node, pos_begin+1);
+    }
+
+    if(pos_begin > 0){
+        rm_node = DivideTextNode(node, pos_begin);
+    }
+
+    const math = AddMathNode('~~', node.parentNode, rm_node);
+    
+    RemoveNode(rm_node);
+    SafeJunctionPoint(math.parentNode, math);
+    SafeJunctionPoint(math.parentNode, math.nextSibling);
+    /*
+    const math_text = math.lastChild.firstChild;
+    InsertTextIntoText(sq_text, math_text, 0);
+    DeleteText(math_text, sq_text.length, math_text.length);
+    */
+    
+
+    
+    const focus = EnableMathEdit(math, 2);
+    document.getSelection().collapse(focus.node, focus.offset);
+    undo_man.End(focus.node, focus.offset);
+
+    
+    return true;  // to default input //
+}
 
 function SwitchInputRoundBra(node, offset) {
     if (node === null) return true;    

@@ -24,13 +24,14 @@ function TexHeader(){
     */
     
     let head_text = "";
-    head_text += "\\documentclass{ltjsarticle}\n"
-    head_text += "\\usepackage{bm}\n"
-    head_text += "\\usepackage{graphicx}\n"
-    head_text += "\\usepackage{fancybox}\n"
-    head_text += "\\usepackage{ascmac}\n"
-    head_text += "\\usepackage{amsmath}\n"
-    head_text += "\\usepackage[luatex,pdfencoding=auto]{hyperref}\n"
+    head_text += "\\documentclass{ltjsarticle}\n";
+    head_text += "\\usepackage{bm}\n";
+    head_text += "\\usepackage{graphicx}\n";
+    head_text += "\\usepackage{fancybox}\n";
+    head_text += "\\usepackage{ascmac}\n";
+    head_text += "\\usepackage{amsmath}\n";
+    head_text += "\\usepackage[luatex,pdfencoding=auto]{hyperref}\n";
+    head_text += "\\usepackage[normalem]{ulem}\n";
     head_text += "\\begin{document}\n"
     head_text += "\n"
     
@@ -39,7 +40,7 @@ function TexHeader(){
 
 
 function TexFooter(){
-    let foot_text = "\n\\end{document}\n"
+    let foot_text = "\n\\end{document}\n";
     return foot_text;
 }
 
@@ -319,18 +320,20 @@ function TexFromNode(node, list_rank){
                     let text = node.lastChild.firstChild.data.slice(mlen, node.lastChild.firstChild.length-mlen);
                     return "\\emph{" + text + "}";
                 }
-            case "editem2":                
+            case "editem2":
                 {
                     const mlen = 2;
                     let text = node.lastChild.firstChild.data.slice(mlen, node.lastChild.firstChild.length-mlen);
                     return "\\textbf{" + text + "}";
                 }
-            case "editem3":                
+            case "editem3":
                 {
                     const mlen = 3;
                     let text = node.lastChild.firstChild.data.slice(mlen, node.lastChild.firstChild.length-mlen);
                     return "\\textbf{\\emph{" + text + "}}";                
                 }
+            case "editdeleted":
+                return "\\sout{" + node.lastChild.firstChild.data.slice(2,node.lastChild.firstChild.length-2) + "}";
             default:
                 if(node.lastChild.firstChild.data.charAt(0)=='_'){ //for empasis by " _AB_ " format//
                     let text = node.lastChild.firstChild.data;

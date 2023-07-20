@@ -64,6 +64,12 @@ function InitializeMathInFragment(fragment, number){
                 ShowPreviewDisplay(math.firstChild);    
             }
             break;
+        case "editdeleted":
+            {
+                math.firstChild.textContent = mathtext;
+                ShowPreview(math.firstChild);        
+            }
+            break;
         case "editimg":
             {
                 let pos_split_a_img = mathtext.indexOf("](");

@@ -515,6 +515,16 @@ function CreateMathNode(mark) {
 
             return math;
         }
+    case "~~":
+        {
+            let math = document.createElement("SPAN");
+            math.className = "math";
+            
+            math.insertAdjacentHTML('afterbegin', "<span class='previewdeleted'>dummy</span>");
+            math.insertAdjacentHTML('beforeend', "<span class='editdeleted'>"+mark+mark+"</span>");
+
+            return math;
+        }
     case "[":
         {
             const math = document.createElement("SPAN");
