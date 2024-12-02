@@ -1,14 +1,14 @@
 {
   "name": "NowType",
-  "version": "0.4.53",
+  "version": "0.4.62",
   "description": "NowType is a markdown editor",
   "main": "ele.main.js",
   "devDependencies": {
-    "electron": "^24.1.0",
-    "electron-builder": "^23.6.0",
+    "electron": "^30.1.2",
+    "electron-builder": "^24.6.4",
     "electron-windows-store": "^2.1.0",
-    "eslint": "^8.38.0",
-    "terser": "^5.16.9"
+    "eslint": "^8.47.0",
+    "terser": "^5.19.2"
   },
   "scripts": {
     "start": "electron .",

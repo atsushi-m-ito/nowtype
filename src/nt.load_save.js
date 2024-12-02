@@ -15,7 +15,7 @@ function NT_SetMarkdown(md_text){
     
     const fragment = MD2DOM(ResolveNewlineCode(md_text));
     InitializeMathInFragment(fragment, g_auto_numbering ? 1 : 0);
-    
+    InitializeCodeHighlight(fragment);
     console.log("set DOM")
     
     maindiv.appendChild(fragment);

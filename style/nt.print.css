@@ -16,12 +16,22 @@
     7.1428% = 15mm / 210mm
     9.5238% = 20mm / 210mm != 20mm / 297mm
     11.9047% = 25mm / 210mm != 25mm / 297mm
-    ただしでは
-*/
+    
+    
     margin-left:    9.5238%;
     margin-right:   9.5238%;
     margin-top:    11.9047%;
     margin-bottom: 11.9047%;
+*/
+/*
+    electron@28でChromiumのmm指定のバグが直ると共に、上記の%指定ではズレが出るようになったの。
+    以降はmmを指定に戻す
+*/  
+    margin-left:   20mm;
+    margin-right:  20mm;
+    margin-top:    25mm;
+    margin-bottom: 25mm;
+      
 }
 
 

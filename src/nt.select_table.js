@@ -736,6 +736,7 @@ function OnPasteTable(event){
     if(!fragment)return;
     if(fragment.firstChild.nodeName == "TABLE"){
         InitializeMathInFragment(fragment, 0);
+        InitializeCodeHighlight(fragment);
         const range = RangeSelectedIndexes();
         undo_man.Begin(nt_selected_cell, NT_SELECT_CELL_MODE, nt_anchor_cell, NT_SELECT_CELL_MODE);
         PasteTableToTable(fragment.firstChild, range);

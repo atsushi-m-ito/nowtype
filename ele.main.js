@@ -880,8 +880,8 @@ ipcMain.on("print_ready", async (event, device) => {
         if(result.canceled){
             wc.send("print_end");
         }else{
-            const headerHTML = "<div></div>"; //空文字ではheaderにdefault文字が出てしまう//
-            const footerHTML = "<div style=\"width:100%; text-align: center; font-size: 8pt; font-family: 'Times', 'Times New Roman', 'serif';\"><span class=pageNumber></span></div>";
+            const headerHTML = "<span></span>"; //空文字ではheaderにdefault文字が出てしまう//
+            const footerHTML = "<span style=\"width:100%; text-align: center; font-size: 8pt; font-family: 'Times', 'Times New Roman', 'serif';\" class=pageNumber></span>";
             
             //wc.printToPDF({pageSize:"A4", marginsType:0"}).then(data => {
             wc.printToPDF({pageSize:"A4",  margins:{top:0,bottom:0,left:0,right:0},displayHeaderFooter: true, headerTemplate:headerHTML, footerTemplate:footerHTML}).then(data => {

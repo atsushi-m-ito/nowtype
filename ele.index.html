@@ -15,6 +15,10 @@
     <link rel="stylesheet" type="text/css" href="./style/notoserif.css" media="all" id="main_css">
     <link rel="stylesheet" type="text/css" href="./style/nt.print.css" media="all" id="nt_print_css">
     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    
 </head>
 <body>
 <div id="backbox"><div id="paper"><div id="render_div" spellcheck="false"></div></div></div>
@@ -270,11 +274,13 @@
     //Menu: View: Math Numbering//    
     window.api.on("mathnumbering", (arg) => {
         NT_MathNumbering(arg.checked ? 1 : 0);
+        QuickRedrawMath(nt_render_div);
     });
 
     //Menu: View: Math Numbering//    
     window.api.on("mathrefresh", (arg) => {
         NT_MathNumbering(2);
+        QuickRedrawMath(nt_render_div);
     });
 
     //Menu: View: Spellcheck//

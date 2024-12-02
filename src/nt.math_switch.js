@@ -70,6 +70,7 @@ function OnClickMath(event){
             }
         }
         DisableEdit(g_editable_math, false);
+        QuickRedrawMath(nt_render_div);
         return;
     }
 
@@ -317,10 +318,28 @@ function DisableEdit(math, in_undo_redo = false){
             break;    
         case "editcodedisp":
             {
-                if(mathtext.charAt(0)==='\n'){
-                    math.firstChild.firstChild.data = mathtext.slice(1,mathtext.length-1);
-                }else{
-                    math.firstChild.firstChild.data = mathtext;
+                
+                if(hljs){
+                    let preview_dom = math.firstChild;
+                    while(preview_dom.firstChild){
+                        preview_dom.removeChild(preview_dom.firstChild);
+                    }
+                    
+                    if(mathtext.charAt(0)==='\n'){
+                        let res = hljs.highlightAuto(mathtext.slice(1,mathtext.length-1));
+                        preview_dom.innerHTML = res.value;
+                    }else{
+                        let res = hljs.highlightAuto(mathtext);
+                        preview_dom.innerHTML = res.value;
+                    }
+                
+                }else                
+                {
+                    if(mathtext.charAt(0)==='\n'){
+                        math.firstChild.firstChild.data = mathtext.slice(1,mathtext.length-1);
+                    }else{
+                        math.firstChild.firstChild.data = mathtext;                        
+                    }
                 }
                 ShowPreviewDisplay(math.firstChild);
             }
@@ -533,7 +552,7 @@ function QuickRedrawMath(render_div){
     /*
     Rendering(DOM generation) with Katex,
     Caret movement becomes slow when data is large.
-    This problem occurs especually in Chrome.
+    This problem occurs especially in Chrome.
     This is caused by the large size of DOM.
     Probably, this is not problem in rendering, 
     this is problem of the calculation of caret position coordinate in big DOM.
@@ -551,40 +570,88 @@ function QuickRedrawMath(render_div){
         Therefore, the width and height to set style of math is obtained from clientWidth and clientHeight.
         And, the check of region to inside/out of window is performed by using getBoundingClientRect() .               
     */
+    
+    {
+        let matches = render_div.querySelectorAll('span.editmathdisp');
+        const whole_height = document.documentElement.clientHeight;
+        //console.log("scroll/resize",matches.length);
 
-    let matches = render_div.querySelectorAll('span.editmathdisp');
-    const whole_height = document.documentElement.clientHeight;
-    console.log("scroll/resize",matches.length);
-
-    for (let i=0; i<matches.length; i++) {
-        const editmath = matches[i];
-        const math = editmath.parentNode;        
-        const katexdisp = math.firstChild;
-        const katex = katexdisp.firstChild;
-        
-        if(katex && ('display' in katex.style )){  //set visible/unvisible just for display math// 
-            const rect = katexdisp.getBoundingClientRect();
+        for (let i=0; i<matches.length; i++) {
+            const editmath = matches[i];
+            const math = editmath.parentNode;        
+            const katexdisp = math.firstChild;
+            const katex = katexdisp.firstChild;
             
-            if((katex.style.display == "none")){
+            if(katex ){  //set visible/unvisible just for display math// 
+                const rect = katexdisp.getBoundingClientRect();
                 if((rect.bottom > 0.0) && (rect.top < whole_height)){
                     if(math !==g_editable_math)// katex is hidden when edit mode//
                     {
-                        katex.style.display = null;//set visible of katex//
+                        if('style' in katex){
+                            katex.style.display = null;//set visible of katex//
+                        }
                     }
-                }
-            }else{
-                if((rect.bottom < 0.0) || (rect.top > whole_height)){
-                
-                    if(rect.height>0.0){
-                        katexdisp.style.width =String(katexdisp.clientWidth) + "px";
-                        katexdisp.style.height=String(katexdisp.clientHeight) + "px";
-                    }
-                    katex.style.display = "none";//unset visible of katex//
+                }else{
+                    //if((rect.bottom < 0.0) || (rect.top > whole_height)){
+                    
+                        if(rect.height>0.0){
+                            katexdisp.style.width =String(katexdisp.clientWidth) + "px";
+                            katexdisp.style.height=String(katexdisp.clientHeight) + "px";
+                        }
+                        if('style' in katex){
+                            katex.style.display = "none";//unset visible of katex//
+                        }
+                        //katex.firstChild.remove();
                 }            
             }
+            
+            
         }
-        
     }
+    
+    
+    {//for inline math
+        let matches = render_div.querySelectorAll('span.editmath');
+        const whole_height = document.documentElement.clientHeight;
+        //console.log("scroll/resize",matches.length);
+
+        for (let i=0; i<matches.length; i++) {
+            const editmath = matches[i];
+            const math = editmath.parentNode;        
+            const katex = math.firstChild;
+            const katexhtml = katex.firstChild;
+            
+            if(katexhtml){  //set visible/unvisible just for display math// 
+                const rect = katex.getBoundingClientRect();
+                
+                
+                if((rect.bottom > 0.0) && (rect.top < whole_height)){
+                    if(math !==g_editable_math)// katex is hidden when edit mode//
+                    {
+                        if('style' in katexhtml){                        
+                            katexhtml.style.display = null;//set visible of katex//
+                        }
+                    }
+                }else{
+                    //if((rect.bottom < 0.0) || (rect.top > whole_height)){
+                    
+                        if(rect.height>0.0){
+                            katex.style.width =String(katex.clientWidth) + "px";
+                            katex.style.height=String(katex.clientHeight) + "px";
+                        }
+                        if('style' in katexhtml){
+                            katexhtml.style.display = "none";//unset visible of katex//
+                        }
+                        //katexhtml.firstChild.remove();
+                    //}            
+                }
+            }
+            
+        }
+    
+    }
+    
+  
 }
 
 
@@ -594,18 +661,42 @@ function FullRedrawMath(render_div){
         Purpose is to make visible all math before print, 
         because displayed math is invisible for performance of movement of caret by using QuickRedrawMath().
     */
-    
-    let matches = render_div.querySelectorAll('span.editmathdisp');
-    const whole_height = document.documentElement.clientHeight;
-    console.log("all displayed math are visible",matches.length);
+    {//displaymath//
+        let matches = render_div.querySelectorAll('span.editmathdisp');
+        const whole_height = document.documentElement.clientHeight;
+        console.log("all displayed math are visible",matches.length);
 
-    for (let i=0; i<matches.length; i++) {
-        const editmath = matches[i];
-        const math = editmath.parentNode;        
-        const katexdisp = math.firstChild;
-        const katex = katexdisp.firstChild;
-        
-        katex.style.display = null;
-        
+        for (let i=0; i<matches.length; i++) {
+            const editmath = matches[i];
+            const math = editmath.parentNode;        
+            const katexdisp = math.firstChild;
+            const katex = katexdisp.firstChild;
+            
+            if(katex){
+                if('style' in katex){   
+                    katex.style.display = null;
+                }
+            }
+            
+        }
+    }
+
+    {//inline math
+        let matches = render_div.querySelectorAll('span.editmath');
+        const whole_height = document.documentElement.clientHeight;
+        console.log("all inline math are visible",matches.length);
+
+        for (let i=0; i<matches.length; i++) {            
+            const editmath = matches[i];
+            const math = editmath.parentNode;        
+            const katex = math.firstChild;
+            const katexhtml = katex.firstChild;
+            
+            if(katexhtml){
+                if('style' in katex){   
+                    katexhtml.style.display = null;
+                }
+            }
+        }
     }
 }

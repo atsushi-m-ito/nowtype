@@ -212,14 +212,21 @@ function NT_ResetChangeFlag(){
 */
 let nt_scroll_ticking = false;
 function OnScroll(event){
-    if(!nt_scroll_ticking){
-        window.requestAnimationFrame(()=>{
-            if(! nt_now_printing ){ 
-                QuickRedrawMath(nt_render_div);
-            }
-            nt_scroll_ticking = false;
-        });
+    //console.log("OnScroll flag=",nt_scroll_ticking);
+    //if(!nt_scroll_ticking)  //this is cause of bug that math is not shown in scroll
+    {   
+        /*
+        this "return" code is necessary for bug fix that the math is not printed in PDF. 
+        The reason of this bug is OnScroll() event with QuickRedrawMath() is called just before printing//
+        Then, the call of QuickRedrawMath() should be suppressed during printing.
+        */
+        if(nt_now_printing)return; 
+
         nt_scroll_ticking = true;
+        window.requestAnimationFrame(()=>{
+            QuickRedrawMath(nt_render_div);
+            nt_scroll_ticking = false;
+        });        
     }
 }
 
@@ -233,9 +240,9 @@ function NT_BeginPrint(){
     const selection = document.getSelection();
     nt_focus_print = {anchorNode:selection.anchorNode,anchorOffset:selection.anchorOffset,
         focusNode:selection.focusNode,focusOffset:selection.focusOffset}
+    nt_now_printing = true;
     FullRedrawMath(nt_render_div);
     nt_render_div.contentEditable="false";
-    nt_now_printing = true;
 }
 
 function NT_EndPrint(){
@@ -243,7 +250,9 @@ function NT_EndPrint(){
     nt_render_div.contentEditable="true";
     QuickRedrawMath(nt_render_div);
     
-    document.getSelection().setBaseAndExtent(nt_focus_print.anchorNode,nt_focus_print.anchorOffset,
-        nt_focus_print.focusNode, nt_focus_print.focusOffset);
+    if(nt_focus_print){
+        document.getSelection().setBaseAndExtent(nt_focus_print.anchorNode,nt_focus_print.anchorOffset,
+            nt_focus_print.focusNode, nt_focus_print.focusOffset);
+    }
     
 }

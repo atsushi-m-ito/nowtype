@@ -147,6 +147,7 @@ function OnPaste(event){
     
     const fragment = MD2DOM(ResolveNewlineCode(text));
     InitializeMathInFragment(fragment, g_auto_numbering ? 1 : 0);
+    InitializeCodeHighlight(fragment);
     PasteTopLevelNodes(node, offset, fragment, event.currentTarget);
            
           

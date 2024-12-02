@@ -16,7 +16,8 @@ function NT_MathNumbering(checked_type) {
     }
     const render_div = nt_render_div;
     const fragment = FragmentFromChildren(render_div);
-    InitializeMathInFragment(fragment, nt_math_number_state);
+    InitializeMathInFragment(fragment, nt_math_number_state);    
+    InitializeCodeHighlight(fragment);
     render_div.appendChild(fragment);
 }
 
@@ -56,10 +57,28 @@ function InitializeMathInFragment(fragment, number){
             break;
         case "editcodedisp":
             {
-                if(mathtext.charAt(0)==='\n'){
-                    math.firstChild.textContent = mathtext.slice(1,mathtext.length - 1);
-                }else{
-                    math.firstChild.textContent = mathtext;
+                
+                if(hljs){
+                    let preview_dom = math.firstChild;
+                    while(preview_dom.firstChild){
+                        preview_dom.removeChild(preview_dom.firstChild);
+                    }
+                    
+                    if(mathtext.charAt(0)==='\n'){
+                        let res = hljs.highlightAuto(mathtext.slice(1,mathtext.length-1));
+                        preview_dom.innerHTML = res.value;
+                    }else{
+                        let res = hljs.highlightAuto(mathtext);
+                        preview_dom.innerHTML = res.value;
+                    }
+                
+                }else  
+                {
+                    if(mathtext.charAt(0)==='\n'){
+                        math.firstChild.textContent = mathtext.slice(1,mathtext.length - 1);
+                    }else{
+                        math.firstChild.textContent = mathtext;
+                    }
                 }
                 ShowPreviewDisplay(math.firstChild);    
             }
@@ -85,5 +104,18 @@ function InitializeMathInFragment(fragment, number){
             break;
         }
         SetHide(math.lastChild);
-    }    
+    }   
+    
+    
+    g_editable_math = null;
 }
+
+function InitializeCodeHighlight(fragment){
+    /*
+    fragment.querySelectorAll('span.previewcodedisp').forEach(el => {
+        // then highlight each
+        hljs.highlightElement(el, 'cpp');
+    });
+*/
+}
+    
